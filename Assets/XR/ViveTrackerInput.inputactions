@@ -28,7 +28,7 @@
                 {
                     "name": "",
                     "id": "5ce56ae9-551d-4136-8c7b-f7858206ae9c",
-                    "path": "",
+                    "path": "<XRViveTracker>{Camera}/devicePosition",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -39,7 +39,7 @@
                 {
                     "name": "",
                     "id": "56823f43-7bf1-49ab-854a-700940391803",
-                    "path": "",
+                    "path": "<XRViveTracker>{Camera}/deviceRotation",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
