@@ -8158,7 +8158,7 @@ Transform:
   m_GameObject: {fileID: 8634753506646425388}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0.0126, z: -0.1098}
+  m_LocalPosition: {x: 0, y: 0.0084, z: -0.1095}
   m_LocalScale: {x: 0.01, y: 0.009999994, z: 0.009999994}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8183,7 +8183,7 @@ MonoBehaviour:
   m_boundaryParticleMat: {fileID: 2100000, guid: 257742b1fedac2f4791369b571260722,
     type: 2}
   m_sphereMesh: {fileID: 4300000, guid: 823956ce1b683574ca519f1f470eb81d, type: 3}
-  radius: 0.36
+  radius: 0.3
   m_drawFluidParticles: 1
   m_run: 1
   dt: 0.026

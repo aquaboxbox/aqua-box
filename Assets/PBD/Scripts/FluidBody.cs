@@ -59,7 +59,7 @@ namespace PBDFluid {
                 mesh, 
                 0, 
                 material, 
-                Bounds, 
+                new Bounds(Vector3.zero, Vector3.one * 10000), 
                 m_argsBuffer, 
                 0, 
                 null, 
