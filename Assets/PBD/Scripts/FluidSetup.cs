@@ -56,8 +56,11 @@ namespace PBDFluid {
             }
 
             if (m_run) {
+                Vector3 pos = transform.position;
+                transform.position *= 1f / scale;
                 m_solver.LocalToWorld = transform.localToWorldMatrix;
                 m_solver.WorldToLocal = transform.worldToLocalMatrix;
+                transform.position = pos;
                 m_solver.StepPhysics(dt, simulationBounds.min, simulationBounds.max);
             }
 
