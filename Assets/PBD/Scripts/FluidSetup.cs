@@ -16,6 +16,7 @@ namespace PBDFluid {
         public Mesh m_sphereMesh;
 
         [Header("Particle Settings")]
+        [Range(0f, 1f)] public float damping = 0f;
         public float radius = 0.1f;
         private float density = 1000;
         public bool m_drawFluidParticles = false;
@@ -57,7 +58,7 @@ namespace PBDFluid {
 
             if (m_run) {
                 Vector3 pos = transform.position;
-                transform.position *= 1f / scale;
+                transform.position = transform.position * 1f / scale * (1f - damping);
                 m_solver.LocalToWorld = transform.localToWorldMatrix;
                 m_solver.WorldToLocal = transform.worldToLocalMatrix;
                 transform.position = pos;
@@ -66,6 +67,7 @@ namespace PBDFluid {
 
             if (m_drawFluidParticles) {
                 m_fluidParticleMat.SetFloat("_Scale", scale);
+                m_fluidParticleMat.SetFloat("_Damping", damping);
                 m_fluidParticleMat.SetVector("_SimulationCenter", transform.position);
                 m_fluid.Draw(Camera.main, m_sphereMesh, m_fluidParticleMat, 0);
             }

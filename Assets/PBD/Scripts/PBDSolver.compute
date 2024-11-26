@@ -8,6 +8,8 @@
 float4x4 _LocalToWorld;
 float4x4 _WorldToLocal;
 
+float3 _MoveSinceLast;
+
 // Hash table
 RWStructuredBuffer<int2> IndexMap;
 RWStructuredBuffer<int2> Table;

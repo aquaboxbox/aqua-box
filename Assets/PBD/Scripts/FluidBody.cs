@@ -52,9 +52,6 @@ namespace PBDFluid {
             material.SetBuffer("_Particles", Positions);
             material.SetFloat("_ParticleSize", ParticleDiameter);
 
-            ShadowCastingMode castShadow = ShadowCastingMode.On;
-            bool recieveShadow = true;
-
             Graphics.DrawMeshInstancedIndirect(
                 mesh, 
                 0, 
@@ -63,8 +60,8 @@ namespace PBDFluid {
                 m_argsBuffer, 
                 0, 
                 null, 
-                castShadow, 
-                recieveShadow, 
+                ShadowCastingMode.Off, 
+                true, 
                 layer, 
                 null
             );

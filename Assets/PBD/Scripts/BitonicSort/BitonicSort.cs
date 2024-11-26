@@ -30,8 +30,8 @@ namespace PBDFluid {
         // the min/max range of particles for these sizes are shown above.
         // If you need to resize these you must also change the same values in the shader.
         // TODO - Have a shader for each range and automatically pick which one to use.
-        private const int BITONIC_BLOCK_SIZE = 512;
-        private const int TRANSPOSE_BLOCK_SIZE = 16;
+        private const int BITONIC_BLOCK_SIZE = 256;
+        private const int TRANSPOSE_BLOCK_SIZE = 8;
 
         public const int MAX_ELEMENTS = BITONIC_BLOCK_SIZE * BITONIC_BLOCK_SIZE;
         public const int MIN_ELEMENTS = BITONIC_BLOCK_SIZE * TRANSPOSE_BLOCK_SIZE;

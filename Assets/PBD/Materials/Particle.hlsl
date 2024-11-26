@@ -13,6 +13,7 @@
 
 // Scale and center of the simulation
 float _Scale;
+float _Damping;
 float3 _SimulationCenter;
 
 // Particle data
@@ -45,7 +46,7 @@ VertexOutput vert(InstancedVertexInput input, uint svInstanceID : SV_InstanceID)
     float4 particle = _Particles[instanceID];
 
     // Output combined data
-    output.positionWS = ((input.position * _ParticleSize + particle.xyz)) * _Scale;
+    output.positionWS = ((input.position * _ParticleSize + particle.xyz)) * _Scale + _SimulationCenter * _Damping;
     output.positionCS = TransformWorldToHClip(output.positionWS);
     output.normalWS = input.normal;
 
