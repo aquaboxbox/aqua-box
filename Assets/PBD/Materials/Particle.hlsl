@@ -45,7 +45,7 @@ VertexOutput vert(InstancedVertexInput input, uint svInstanceID : SV_InstanceID)
     float4 particle = _Particles[instanceID];
 
     // Output combined data
-    output.positionWS = ((input.position * _ParticleSize + particle.xyz) - _SimulationCenter) * _Scale + _SimulationCenter;
+    output.positionWS = ((input.position * _ParticleSize + particle.xyz)) * _Scale;
     output.positionCS = TransformWorldToHClip(output.positionWS);
     output.normalWS = input.normal;
 
