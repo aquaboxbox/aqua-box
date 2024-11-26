@@ -107,11 +107,13 @@ int NumParticles;
 void PredictPositions(int id : SV_DispatchThreadID) {
 	if (id >= NumParticles) return;
 	float3 velocity = (1 - Dampning * DeltaTime) * VelocitiesREAD[id].xyz + Gravity * DeltaTime;
-	float3 pos = Positions[id].xyz + velocity * DeltaTime;
+	float3 pos = Positions[id].xyz + velocity * 1/120.0f;
 	pos = mul(_WorldToLocal, float4(pos, 1)).xyz;
 	
 	// Check boundaries with random offset to prevent particles from sticking to walls
-	bool3 outside = (pos < MinBounds - float3(rand(id.x * 29), rand(id.x * 31), rand(id.x * 37)) * 0.02f) || (pos > MaxBounds + float3(rand(id.x * 41), rand(id.x * 43), rand(id.x * 47)) * 0.02f);
+	bool3 outside = 
+		(pos < MinBounds - float3(rand(id.x * 29), rand(id.x * 31), rand(id.x * 37)) * 0.02f) || 
+		(pos > MaxBounds + float3(rand(id.x * 41), rand(id.x * 43), rand(id.x * 47)) * 0.02f);
 
 	// If not translated, particles will break physics
 	velocity = mul(_WorldToLocal, float4(velocity, 0)).xyz;

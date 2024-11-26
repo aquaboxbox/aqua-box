@@ -21,8 +21,9 @@ namespace PBDFluid {
         public bool m_drawFluidParticles = false;
 
         [Header("Simulation Settings")]
+        public float scale = 1;
         public bool m_run = true;
-        public float dt = 0.005f;
+        public float dt = 0.013f;
         public Bounds simulationBounds = new Bounds(new Vector3(0, 5, -2), new Vector3(8, 5, 2));
         public Bounds[] fluidSpawnBounds = { new Bounds(new Vector3(-6, 2, -2), new Vector3(2, 2, 2)) };
         
@@ -60,8 +61,11 @@ namespace PBDFluid {
                 m_solver.StepPhysics(dt, simulationBounds.min, simulationBounds.max);
             }
 
-            if (m_drawFluidParticles)
+            if (m_drawFluidParticles) {
+                m_fluidParticleMat.SetFloat("_Scale", scale);
+                m_fluidParticleMat.SetVector("_SimulationCenter", transform.position);
                 m_fluid.Draw(Camera.main, m_sphereMesh, m_fluidParticleMat, 0);
+            }
         }
 
         private void OnDestroy() {

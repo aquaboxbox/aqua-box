@@ -441,7 +441,7 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!1 &913303148
+--- !u!1 &1648827219
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -449,23 +449,22 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 913303150}
-  - component: {fileID: 913303149}
-  - component: {fileID: 913303151}
+  - component: {fileID: 1648827222}
+  - component: {fileID: 1648827221}
   m_Layer: 0
-  m_Name: Fluid
+  m_Name: FluidBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &913303149
+--- !u!114 &1648827221
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 913303148}
+  m_GameObject: {fileID: 1648827219}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 529fabbfc66681f4db0287ae7d378283, type: 3}
@@ -479,21 +478,22 @@ MonoBehaviour:
   m_sphereMesh: {fileID: 4300000, guid: 823956ce1b683574ca519f1f470eb81d, type: 3}
   radius: 0.12
   m_drawFluidParticles: 1
+  scale: 1
   m_run: 1
   dt: 0.013
   simulationBounds:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 5, y: 5, z: 5}
+    m_Extent: {x: 4, y: 4, z: 4}
   fluidSpawnBounds:
   - m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 4, y: 1.5, z: 4}
---- !u!4 &913303150
+    m_Extent: {x: 4, y: 2, z: 4}
+--- !u!4 &1648827222
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 913303148}
+  m_GameObject: {fileID: 1648827219}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -502,22 +502,10 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &913303151
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 913303148}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b03f7ae76e6b1c34c97aaff5b814664a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 93030210}
   - {fileID: 837355528}
-  - {fileID: 913303150}
+  - {fileID: 1648827222}

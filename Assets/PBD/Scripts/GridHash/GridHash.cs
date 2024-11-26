@@ -98,32 +98,6 @@ namespace PBDFluid {
             m_shader.SetVector("HashTranslate", Bounds.min);
 
             m_shader.SetBuffer(m_hashKernel, "Particles", particles);
-            m_shader.SetBuffer(m_hashKernel, "Boundary", particles); //unity 2018 complains if boundary not set in kernel
-            m_shader.SetBuffer(m_hashKernel, "IndexMap", IndexMap);
-
-            m_shader.SetMatrix("_WorldToLocal", WorldToLocal);
-
-            //Assign the particles hash to x and index to y.
-            m_shader.Dispatch(m_hashKernel, Groups, 1, 1);
-
-            MapTable();
-        }
-
-        public void Process(ComputeBuffer particles, ComputeBuffer boundary, Matrix4x4 WorldToLocal) {
-            int numParticles = particles.count;
-            int numBoundary = boundary.count;
-
-            if (numParticles + numBoundary != TotalParticles)
-                throw new ArgumentException("numParticles + numBoundary != TotalParticles");
-
-            m_shader.SetInt("NumParticles", numParticles);
-            m_shader.SetInt("TotalParticles", TotalParticles);
-            m_shader.SetFloat("HashScale", InvCellSize);
-            m_shader.SetVector("HashSize", Bounds.size);
-            m_shader.SetVector("HashTranslate", Bounds.min);
-
-            m_shader.SetBuffer(m_hashKernel, "Particles", particles);
-            m_shader.SetBuffer(m_hashKernel, "Boundary", boundary);
             m_shader.SetBuffer(m_hashKernel, "IndexMap", IndexMap);
 
             m_shader.SetMatrix("_WorldToLocal", WorldToLocal);

@@ -11,6 +11,10 @@
 #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
 #include "UnityIndirect.cginc"
 
+// Scale and center of the simulation
+float _Scale;
+float3 _SimulationCenter;
+
 // Particle data
 float _ParticleSize;
 StructuredBuffer<float4> _Particles;
@@ -41,7 +45,7 @@ VertexOutput vert(InstancedVertexInput input, uint svInstanceID : SV_InstanceID)
     float4 particle = _Particles[instanceID];
 
     // Output combined data
-    output.positionWS = input.position * _ParticleSize + particle.xyz;
+    output.positionWS = ((input.position * _ParticleSize + particle.xyz) - _SimulationCenter) * _Scale + _SimulationCenter;
     output.positionCS = TransformWorldToHClip(output.positionWS);
     output.normalWS = input.normal;
 
