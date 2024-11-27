@@ -40,15 +40,15 @@ namespace PBDFluid
             ConstraintIterations = 2;
         }
 
-        public void StepPhysics(float dt, Vector3 minBounds, Vector3 maxBounds) {
+        public void StepPhysics(float dt) {
             if (dt <= 0.0 || SolverIterations <= 0 || ConstraintIterations <= 0) return;
 
             dt = Mathf.Min(dt, Time.deltaTime * 3f);
 
             dt /= SolverIterations;
 
-            m_shader.SetVector("MinBounds", minBounds);
-            m_shader.SetVector("MaxBounds", maxBounds);
+            m_shader.SetVector("MinBounds", new Vector3(-1, -1, -1));
+            m_shader.SetVector("MaxBounds", new Vector3(1, 1, 1));
 
             m_shader.SetInt("NumParticles", Body.NumParticles);
             m_shader.SetVector("Gravity", new Vector3(0.0f, -9.81f, 0.0f));
