@@ -1,85 +1,159 @@
 using UnityEngine;
 
-public class CylinderManager : MonoBehaviour
+[RequireComponent(typeof(Renderer))]
+public class GeneralFillManager : MonoBehaviour
 {
-    public Renderer cylinderRenderer;     // Renderer for the cylinder's material
-    public float fillSpeed = 1.0f;        // Speed at which the water level rises
-    public float cycleInterval = 2.0f;   // Time interval between trigger activations
+    public float fillSpeed = 1.0f;         // Speed at which the fill level transitions
+    public Transform box;                 // The "Box" object being moved
+    public Transform[] triggers;          // Array of triggers (Trigger 1, 2, 3, 4)
+    public GameObject[] lightCylinders;   // LightCylinder objects under each trigger
 
-    private int currentTriggerIndex = 0;  // Index of the active trigger
-    private float[] targetFillLevels;     // Fill levels for each trigger
-    private float currentFillLevel = 0f;  // Current water fill level (0 to 1)
-    private bool isFilling = false;       // Is the water level increasing?
-    private float timer = 0f;             // Timer for cycling triggers
+    private Renderer objectRenderer;      // Renderer for the object this script is attached to
+    private float[] targetFillLevels;     // Target fill levels for each trigger
+    private int activeTriggerIndex = -1;  // Index of the currently active trigger
+    private float currentFillLevel = 0f;  // Current fill level (0 to 1)
+    private bool isFilling = false;       // Is the object being filled?
+    private float minY;                   // Minimum Y-coordinate of the object
+    private float maxY;                   // Maximum Y-coordinate of the object
 
     void Start()
     {
-        // Initialize fill levels for triggers (normalized between 0 and 1)
-        targetFillLevels = new float[] { 0.25f, 0.5f, 0.75f, 1.0f };
+        // Initialize target fill levels
+        targetFillLevels = new float[] { 0.1f, 0.3f, 0.5f, 1.0f };
 
-        // Ensure the cylinder has a material and starts empty
-        if (cylinderRenderer != null)
+        // Get the renderer of the current object
+        objectRenderer = GetComponent<Renderer>();
+
+        // Ensure the object uses the correct shader
+        if (!objectRenderer.material.HasProperty("_FillLevel") ||
+            !objectRenderer.material.HasProperty("_MinY") ||
+            !objectRenderer.material.HasProperty("_MaxY"))
         {
-            // Check if the material is properly assigned
-            if (cylinderRenderer.material == null)
-            {
-                Debug.LogError("Cylinder Material is missing! Assign it in the Inspector.");
-                return;
-            }
-
-            // Ensure the custom shader is applied
-            Shader customShader = Shader.Find("Custom/BarrelFillShader");
-            if (customShader == null)
-            {
-                Debug.LogError("Custom shader 'BarrelFillShader' not found!");
-                return;
-            }
-            cylinderRenderer.material.shader = customShader;
-
-            // Initialize the fill level
-            cylinderRenderer.material.SetFloat("_FillLevel", 0f);
+            Debug.LogError("Shader does not have required properties (_FillLevel, _MinY, _MaxY)!");
+            return;
         }
 
-        // Trigger the first fill level change
-        ActivateNextTrigger();
+        // Calculate _MinY and _MaxY for this object
+        SetMinMaxY();
+
+        // Initialize the material's properties
+        objectRenderer.material.SetFloat("_FillLevel", 0f);
+
+        // Deactivate all light cylinders initially
+        foreach (var light in lightCylinders)
+        {
+            light.SetActive(false);
+        }
     }
 
     void Update()
     {
-        if (cylinderRenderer == null)
+        // Check which trigger the box is overlapping
+        int triggerIndex = GetTriggerIndexUnderBox();
+
+        if (triggerIndex != activeTriggerIndex)
         {
-            Debug.LogError("Cylinder Renderer is not assigned! Please assign it in the Inspector.");
-            return;
+            // Update the active trigger and corresponding light cylinder
+            SetActiveTrigger(triggerIndex);
         }
 
-        if (isFilling)
+        // Handle fill level transitions
+        if (isFilling && activeTriggerIndex >= 0)
         {
-            currentFillLevel = Mathf.MoveTowards(currentFillLevel, targetFillLevels[currentTriggerIndex], fillSpeed * Time.deltaTime);
+            currentFillLevel = Mathf.MoveTowards(
+                currentFillLevel,
+                targetFillLevels[activeTriggerIndex],
+                fillSpeed * Time.deltaTime
+            );
 
-            cylinderRenderer.material.SetFloat("_FillLevel", currentFillLevel);
+            // Update the shader's fill level
+            objectRenderer.material.SetFloat("_FillLevel", currentFillLevel);
 
-            if (Mathf.Approximately(currentFillLevel, targetFillLevels[currentTriggerIndex]))
+            if (Mathf.Approximately(currentFillLevel, targetFillLevels[activeTriggerIndex]))
             {
                 isFilling = false;
             }
         }
-
-        // Cycle triggers after the interval
-        timer += Time.deltaTime;
-        if (timer >= cycleInterval)
-        {
-            timer = 0f;
-            ActivateNextTrigger();
-        }
     }
 
-    void ActivateNextTrigger()
+    void SetMinMaxY()
     {
-        // Move to the next target fill level
-        currentTriggerIndex = (currentTriggerIndex + 1) % targetFillLevels.Length;
+        MeshFilter meshFilter = GetComponent<MeshFilter>();
+        Bounds meshBounds = meshFilter.sharedMesh.bounds;
 
-        isFilling = true;
+        // Calculate _MinY and _MaxY based on the object's local scale
+        minY = meshBounds.min.y * transform.localScale.y;
+        maxY = meshBounds.max.y * transform.localScale.y;
 
-        Debug.Log($"Trigger {currentTriggerIndex + 1} activated: Target fill level = {targetFillLevels[currentTriggerIndex]}");
+        // Set these values in the material
+        objectRenderer.material.SetFloat("_MinY", minY);
+        objectRenderer.material.SetFloat("_MaxY", maxY);
+
+        Debug.Log($"{gameObject.name} -> MinY: {minY}, MaxY: {maxY}");
+    }
+
+    int GetTriggerIndexUnderBox()
+    {
+        // Check each trigger to see if the box is overlapping it
+        for (int i = 0; i < triggers.Length; i++)
+        {
+            if (IsBoxOverlappingTrigger(box, triggers[i]))
+            {
+                return i;
+            }
+        }
+        return -1; // No trigger is overlapped
+    }
+
+    bool IsBoxOverlappingTrigger(Transform box, Transform trigger)
+    {
+        // Get the 2D bounds of the box
+        Vector2 boxMin = new Vector2(
+            box.position.x - box.localScale.x / 2f,
+            box.position.z - box.localScale.z / 2f
+        );
+        Vector2 boxMax = new Vector2(
+            box.position.x + box.localScale.x / 2f,
+            box.position.z + box.localScale.z / 2f
+        );
+
+        // Get the 2D bounds of the trigger
+        Vector2 triggerMin = new Vector2(
+            trigger.position.x - trigger.localScale.x / 2f,
+            trigger.position.z - trigger.localScale.z / 2f
+        );
+        Vector2 triggerMax = new Vector2(
+            trigger.position.x + trigger.localScale.x / 2f,
+            trigger.position.z + trigger.localScale.z / 2f
+        );
+
+        // Check for overlap in 2D (ignoring height)
+        return boxMin.x < triggerMax.x && boxMax.x > triggerMin.x &&
+               boxMin.y < triggerMax.y && boxMax.y > triggerMin.y;
+    }
+
+    void SetActiveTrigger(int triggerIndex)
+    {
+        // Deactivate the previous light cylinder
+        if (activeTriggerIndex >= 0)
+        {
+            lightCylinders[activeTriggerIndex].SetActive(false);
+        }
+
+        // Activate the new light cylinder
+        if (triggerIndex >= 0)
+        {
+            lightCylinders[triggerIndex].SetActive(true);
+
+            // Start filling the object for the new trigger
+            activeTriggerIndex = triggerIndex;
+            isFilling = true;
+
+            Debug.Log($"Trigger {triggerIndex + 1} activated: Target fill level = {targetFillLevels[triggerIndex]}");
+        }
+        else
+        {
+            activeTriggerIndex = -1; // No trigger is active
+        }
     }
 }
