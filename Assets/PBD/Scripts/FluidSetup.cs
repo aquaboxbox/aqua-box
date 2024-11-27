@@ -41,6 +41,7 @@ namespace PBDFluid {
 
             Debug.Log("Fluid Particles = " + m_fluid.NumParticles);
 
+            m_fluid.Bounds = new Bounds(Vector3.zero, transform.localScale);
             m_solver = new PBDFluidSolver(m_fluid);
         }
 
