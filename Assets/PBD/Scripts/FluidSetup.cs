@@ -12,6 +12,7 @@ namespace PBDFluid {
 
         [Header("Unity References")]
         public Material m_fluidParticleMat;
+        public Material m_boundaryParticleMat;
         public Mesh m_sphereMesh;
 
         [Header("Particle Settings")]
@@ -21,13 +22,16 @@ namespace PBDFluid {
         public bool m_drawFluidParticles = false;
 
         [Header("Simulation Settings")]
-        public float renderScale = 1;
+        public float scale = 1;
         public bool m_run = true;
         public float dt = 0.013f;
+        public Bounds simulationBounds = new Bounds(new Vector3(0, 5, -2), new Vector3(8, 5, 2));
         public Bounds[] fluidSpawnBounds = { new Bounds(new Vector3(-6, 2, -2), new Vector3(2, 2, 2)) };
         
         private FluidBody m_fluid;
         private PBDFluidSolver m_solver;
+
+        Bounds outerBounds;
 
         // Start is called before the first frame update
         void Start() {
@@ -41,11 +45,12 @@ namespace PBDFluid {
 
             Debug.Log("Fluid Particles = " + m_fluid.NumParticles);
 
+            m_fluid.Bounds = simulationBounds;
             m_solver = new PBDFluidSolver(m_fluid);
         }
 
         // Update is called once per frame
-        void Update() {
+        private void Update() {
             if (Input.GetKeyDown(KeyCode.R)) {
                 OnDestroy();
                 Start();
@@ -53,23 +58,22 @@ namespace PBDFluid {
 
             if (m_run) {
                 Vector3 pos = transform.position;
-                transform.position = transform.position * 1f / renderScale * (1f - damping);
+                transform.position = transform.position * 1f / scale * (1f - damping);
                 m_solver.LocalToWorld = transform.localToWorldMatrix;
                 m_solver.WorldToLocal = transform.worldToLocalMatrix;
                 transform.position = pos;
-
-                m_solver.StepPhysics(dt);
+                m_solver.StepPhysics(dt, simulationBounds.min, simulationBounds.max);
             }
 
             if (m_drawFluidParticles) {
-                m_fluidParticleMat.SetFloat("_Scale", renderScale);
+                m_fluidParticleMat.SetFloat("_Scale", scale);
                 m_fluidParticleMat.SetFloat("_Damping", damping);
                 m_fluidParticleMat.SetVector("_SimulationCenter", transform.position);
                 m_fluid.Draw(Camera.main, m_sphereMesh, m_fluidParticleMat, 0);
             }
         }
 
-        void OnDestroy() {
+        private void OnDestroy() {
             m_fluid.Dispose();
             m_solver.Dispose();
         }
@@ -88,7 +92,7 @@ namespace PBDFluid {
         }
 
         // Fills bounds with evenly spaced particles
-        public IList<Vector3> CreateParticles(float spacing, Bounds bounds) {
+        public static IList<Vector3> CreateParticles(float spacing, Bounds bounds) {
             Vector3Int particleCount = Vector3Int.FloorToInt(bounds.size / spacing);
             List<Vector3> Positions = new List<Vector3>((int)particleCount.x * particleCount.y * particleCount.z);
 

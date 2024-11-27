@@ -127,7 +127,9 @@ namespace PBDFluid {
         }
 
         private void CreateArgBuffer(uint indexCount) {
-            uint[] args = new uint[5] { indexCount, (uint)NumParticles, 0, 0, 0 };
+            uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
+            args[0] = indexCount;
+            args[1] = (uint)NumParticles;
 
             m_argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
             m_argsBuffer.SetData(args);

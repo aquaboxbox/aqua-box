@@ -155,7 +155,7 @@ void ComputeDensityAndPressure(int id : SV_DispatchThreadID) {
 	FOREACH_NEIGHBOR_END
 
 	float C = density * InvDensity - 1.0f;
-	if (C > -0.5f) {
+	if (C > 0) {
 		// C > 0 for 60% - 65% of particles
 		sum_grad_C2 += dot(gradC_i, gradC_i);
 	
