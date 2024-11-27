@@ -105,32 +105,22 @@ public class GeneralFillManager : MonoBehaviour
         return -1; // No trigger is overlapped
     }
 
-    bool IsBoxOverlappingTrigger(Transform box, Transform trigger)
-    {
-        // Get the 2D bounds of the box
-        Vector2 boxMin = new Vector2(
-            box.position.x - box.localScale.x / 2f,
-            box.position.z - box.localScale.z / 2f
-        );
-        Vector2 boxMax = new Vector2(
-            box.position.x + box.localScale.x / 2f,
-            box.position.z + box.localScale.z / 2f
-        );
+bool IsBoxOverlappingTrigger(Transform box, Transform trigger)
+{
+    // Use the center position of the Box and Trigger for comparison
+    Vector2 boxCenter = new Vector2(box.position.x, box.position.z);
+    Vector2 triggerCenter = new Vector2(trigger.position.x, trigger.position.z);
 
-        // Get the 2D bounds of the trigger
-        Vector2 triggerMin = new Vector2(
-            trigger.position.x - trigger.localScale.x / 2f,
-            trigger.position.z - trigger.localScale.z / 2f
-        );
-        Vector2 triggerMax = new Vector2(
-            trigger.position.x + trigger.localScale.x / 2f,
-            trigger.position.z + trigger.localScale.z / 2f
-        );
+    // Calculate half dimensions of the Trigger (center-based detection)
+    float triggerHalfWidth = trigger.localScale.x / 2f;
+    float triggerHalfDepth = trigger.localScale.z / 2f;
 
-        // Check for overlap in 2D (ignoring height)
-        return boxMin.x < triggerMax.x && boxMax.x > triggerMin.x &&
-               boxMin.y < triggerMax.y && boxMax.y > triggerMin.y;
-    }
+    // Check if the Box's center is within the Trigger's bounds
+    return boxCenter.x > (triggerCenter.x - triggerHalfWidth) &&
+           boxCenter.x < (triggerCenter.x + triggerHalfWidth) &&
+           boxCenter.y > (triggerCenter.y - triggerHalfDepth) &&
+           boxCenter.y < (triggerCenter.y + triggerHalfDepth);
+}
 
     void SetActiveTrigger(int triggerIndex)
     {
