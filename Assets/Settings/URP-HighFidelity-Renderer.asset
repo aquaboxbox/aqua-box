@@ -111,23 +111,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   settings:
-    depthBlurRadius: 10
-    depthDistanceSigma: 1
-    depthIntesitySigma: 0.003
-    depthRounding: 0.58
-    thickness: 0.558
-    thicknessBlurRadius: 1
-    thicknessDistanceSigma: 13.1
+    depthBlurRadius: 1
+    depthDistanceSigma: 5.9
+    depthIntesitySigma: 0.035
+    depthRounding: 0.46
+    depthBlurResolution: 1
+    thickness: 0.441
+    thicknessBlurRadius: 0
+    thicknessDistanceSigma: 8.3
+    thicknessBlurResolution: 1
     mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
-    radius: 0.308
+    radius: 0.008
     gridSize: 4
     randomSeed: 1
     randomParticles: 1000
     offset: {x: 0, y: 0, z: 0}
+    maxParticles: 1000000
     blur: 0
     depth: 0
     lightPos: {x: 0, y: 0, z: 0}
     renderPassEvent: 500
     limitFps: 0
-    blurResolution: 1
   shader: {fileID: 4800000, guid: cad684b39d68749a8a077d4373ea7feb, type: 3}

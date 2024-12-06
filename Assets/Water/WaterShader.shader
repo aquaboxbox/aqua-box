@@ -41,6 +41,9 @@ Shader "Custom/WaterShader"
             float _Radius;
             float _DepthRounding;
             StructuredBuffer<float4> _PositionBuffer;
+            float _Scale;
+            float _Damping;
+            float3 _SimulationCenter;
 
             VertexOutput vert(VertexInput vIn, uint instanceID : SV_InstanceID)
             {
@@ -50,7 +53,7 @@ Shader "Custom/WaterShader"
                 UNITY_TRANSFER_INSTANCE_ID(vIn, vOut);
 
                 // Generate model pos
-                float3 center = _PositionBuffer[instanceID];
+                float3 center = _PositionBuffer[instanceID] * _Scale + _SimulationCenter * _Damping;;
                 float3 cameraPos = _WorldSpaceCameraPos;
 
                 float3 cameraDir = normalize(cameraPos - center);
@@ -143,6 +146,9 @@ Shader "Custom/WaterShader"
             float _Radius;
             float _Thickness;
             StructuredBuffer<float4> _PositionBuffer;
+            float _Scale;
+            float _Damping;
+            float3 _SimulationCenter;
 
             VertexOutput vert(VertexInput vIn, uint instanceID : SV_InstanceID)
             {
@@ -152,7 +158,8 @@ Shader "Custom/WaterShader"
                 UNITY_TRANSFER_INSTANCE_ID(vIn, vOut);
 
                 // Generate model pos
-                float3 center = _PositionBuffer[instanceID];
+                //float3 center = _PositionBuffer[instanceID];
+                float3 center = _PositionBuffer[instanceID] * _Scale + _SimulationCenter * _Damping;;
                 float3 cameraPos = _WorldSpaceCameraPos;
 
                 float3 cameraDir = normalize(cameraPos - center);
@@ -360,6 +367,8 @@ Shader "Custom/WaterShader"
             sampler2D _CameraDepthTexture;
             sampler2D _DepthTexture;
             sampler2D _ThicknessTexture;
+            sampler2D _SceneDepthTexture;
+
             float4x4 _InverseView;
             float4x4 _InverseProjection;
             float4x4 _InverseViewProjection;
@@ -412,9 +421,9 @@ Shader "Custom/WaterShader"
                 float3 topPos    = reconstructPosition(uv + float2(0,-1) * texelSize, topDepth);
                 float3 bottomPos = reconstructPosition(uv + float2(0, 1) * texelSize, bottomDepth);
 
-                if (centerDepth <= 0.01) {
-                    return sceneColor;
-                }
+                //if (centerDepth <= 0.01) {
+                //    return sceneColor;
+                //}
 
                 bool leftBest = abs(leftDepth - centerDepth) < abs(rightDepth - centerDepth);
                 bool topBest = abs(topDepth - centerDepth) < abs(bottomDepth - centerDepth);
@@ -454,15 +463,20 @@ Shader "Custom/WaterShader"
                 //return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
                 float3 col = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
                 //return float4(fluidColor, 1);
-                //return float4(1,1,1, 1);
-                return float4(col, 1);
+                //return float4(1,0,0, 1);
+                // return float4(col, 1);
 
                 float light = ambient + diffuse + specular;
                 //float light = specular;
                 float3 color = sceneColor;
-                if (tex2D(_CameraDepthTexture, uv).r < tex2D(_DepthTexture, uv).r) {
-                    color = float3(0.0, 0.4, 0.6) * light;
-                }
+                //if (tex2D(_SceneDepthTexture, uv).r > tex2D(_DepthTexture, uv).r) {
+                    //return float4(1,0,0,1);
+                    //color = float3(0.0, 0.4, 0.6) * light;
+                //}
+                color = col;
+                //return tex2D(_CameraDepthTexture, uv);
+                //return tex2D(_SceneDepthTexture, uv);
+                //return tex2D(_DepthTexture, uv);
 
                 //return sceneColor;
                 return float4(color, 1);

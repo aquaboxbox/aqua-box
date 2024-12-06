@@ -194,10 +194,13 @@ public class WaterRenderFeature : ScriptableRendererFeature
             // render depth
             cmd.SetRenderTarget(this.depthHandle);
             this.DrawSpheres(cmd, depthIndex, camera);
+
             // blur particles
             Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
+            Blit(cmd, this.depthHalfResHandle, this.depthHandle);
             // combine with existing depth buffer
-            Blit(cmd, this.depthHandle, this.depthHandle, this.material, blitDepthIndex);
+            // cmd.SetRenderTarget(depthTarget, depthTarget);
+            //Blit(cmd, this.depthHandle, this.depthHandle, this.material, blitDepthIndex);
 
             // render thickness
             // TODO: BLUR THIS?
@@ -214,7 +217,11 @@ public class WaterRenderFeature : ScriptableRendererFeature
             }
             else
             {
+                cmd.SetRenderTarget(depthTarget, depthTarget);
                 Blit(cmd, colorTarget, colorTarget, this.material, renderIndex);
+                // this.material.SetTexture("_SceneDepthTexture", depthTarget);
+                // cmd.SetRenderTarget(colorTarget, depthTarget);
+                // Blit(cmd, depthTarget, colorTarget);
             }
 
 
@@ -229,43 +236,22 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
             UnityEngine.Random.InitState(this.settings.randomSeed);
 
-            // for (int i = 0; i < this.settings.gridSize; i++)
-            // {
-            //     for (int j = 0; j < this.settings.gridSize; j++)
-            //     {
-            //         for (int k = 0; k < this.settings.gridSize; k++)
-            //         {
-            //             Vector3 position = new Vector3(i, j, k) + settings.offset;
-            //             Vector3 jitter = new(
-            //                 UnityEngine.Random.Range(0, 0.5f),
-            //                 UnityEngine.Random.Range(0, 0.5f),
-            //                 UnityEngine.Random.Range(0, 0.5f)
-            //             );
-            //
-            //             centers.Add(position + jitter);
-            //         }
-            //     }
-            // }
-
-            // this.positionBuffer.SetData(centers.ToArray());
 
             PBDFluid.FluidSetup fluidSimulation = FindObjectOfType<PBDFluid.FluidSetup>();
             if (fluidSimulation.m_fluid != null)
             {
-                // Debug.Log($"FLUID {fluidSimulation.m_fluid}");
-
-                // Vector4[] poss = new Vector4[10];
-                // fluidSimulation.GetPositionBuffer().GetData(poss);
-                // foreach (Vector4 p in poss)
-                // {
-                //     Debug.Log(p);
-                // }
                 Debug.Log(fluidSimulation.GetPositionBuffer().stride);
 
                 this.positionBuffer = fluidSimulation.GetPositionBuffer();
 
+
+
                 this.indirectDrawArgs[1] = (uint)fluidSimulation.GetPositionBuffer().count;
                 this.indirectDrawArgsBuffer.SetData(this.indirectDrawArgs);
+
+                this.material.SetFloat("_Scale", fluidSimulation.scale);
+                this.material.SetFloat("_Damping", fluidSimulation.damping);
+                this.material.SetVector("_SimulationCenter", fluidSimulation.transform.position);
             }
 
 
