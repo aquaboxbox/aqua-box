@@ -38,10 +38,9 @@ namespace PBDFluid
         public ComputeBuffer GetPositionBuffer() => m_fluid.Positions;
         public ComputeBuffer GetDensityBuffer() => m_fluid.Densities;
 
-        // Start is called before the first frame update
-        void Start()
-        {
 
+        void OnEnable()
+        {
             // Set the compute shaders
             GridHash.m_shader = m_gridHash;
             BitonicSort.m_shader = m_bitonicSort;
@@ -53,6 +52,7 @@ namespace PBDFluid
 
             m_fluid.Bounds = simulationBounds;
             m_solver = new PBDFluidSolver(m_fluid);
+
         }
 
         // Update is called once per frame
@@ -60,8 +60,8 @@ namespace PBDFluid
         {
             if (Input.GetKeyDown(KeyCode.R))
             {
-                OnDestroy();
-                Start();
+                OnDisable();
+                OnEnable();
             }
 
             if (m_run)
@@ -83,7 +83,7 @@ namespace PBDFluid
             }
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             m_fluid.Dispose();
             m_solver.Dispose();
