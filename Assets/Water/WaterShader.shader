@@ -285,12 +285,14 @@ Shader "Custom/WaterShader"
             sampler2D _CameraDepthTexture;
             sampler2D _DepthVerticalTexture;
             sampler2D _ThicknessVerticalTexture;
+            sampler2D _ColorTexture;
 
             float4x4 _InverseView;
             float4x4 _InverseProjection;
             float4x4 _InverseViewProjection;
             float3 _LightPos;
             float _SpecularHighlight;
+            float _RefractionCoefficient;
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -322,7 +324,6 @@ Shader "Custom/WaterShader"
 
             float4 frag(Varyings input) : SV_Target
             {
-                float4 sceneColor = FragBilinear(input);
                 float2 uv = input.texcoord;
 
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
@@ -362,22 +363,37 @@ Shader "Custom/WaterShader"
                 float specular = 0.5 * pow(saturate(dot(halfDir, normal)), _SpecularHighlight);
 
                 float thickness = tex2D(_ThicknessVerticalTexture, uv).r;
+                float4 baseSceneColor = tex2D(_ColorTexture, uv);
+                float2 refractedUv = uv + normal.xy * thickness * _RefractionCoefficient;
+                float4 refractedSceneColor = tex2D(_ColorTexture, refractedUv);
+                float refractedDepth = tex2D(_CameraDepthTexture, refractedUv).r;
+                // Don't refract object in front of water
+                if (refractedDepth > centerDepth) {
+                    refractedSceneColor = baseSceneColor;
+                }
 
-                float3 fluidColor = float3(0.0, 0.4, 0.6);
-                float3 refractedColor = lerp(fluidColor, sceneColor.xyz, exp(-thickness));
+                //float4 sceneColor = tex2D(_BlitTexture)
+                float3 fluidColor = float3(0.0, 0.4, 0.6); // TODO: modify rgb channels with thickness differently instead
+                float3 refractedColor = lerp(fluidColor, refractedSceneColor.xyz, exp(-thickness));
                 float3 reflectedColor = float3(1,1,1);
                 float fresnelFactor = fresnel(dot(normal, viewDir));
-                //float3 col = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
+                //float3 color = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
                 float3 color = refractedColor + specular;
                 //float3 color = diffuse * float3(1,1,1);
 
                 // depth test
-                float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
                 float fluidDepth = centerDepth;
+                float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
                 float d = max(sceneDepth, fluidDepth);
                 //return float4(d,d,d,1);
+                //if (length(sceneDepth - fluidDepth) <= 0.0001) {
+                //    return float4(1,0,0,1);
+                //}
+                if (refractedDepth < fluidDepth) {
+                    //return float4(1,0,0,1);
+                }
                 if (sceneDepth > fluidDepth) {
-                    return sceneColor;
+                    return baseSceneColor;
                 }
 
                 return float4(color, 1);
