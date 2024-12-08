@@ -200,36 +200,6 @@ Shader "Custom/WaterShader"
             }
             ENDHLSL
         }
-        // depth blit
-        Pass {
-            ZWrite On
-            ZTest Off
-
-            HLSLPROGRAM
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-            
-            sampler2D _CameraDepthTexture;
-            sampler2D _HalfResDepthTexture;
-
-            #pragma vertex Vert
-            #pragma fragment frag
-
-            float frag(Varyings input) : SV_Depth
-            {
-                return tex2D(_HalfResDepthTexture, input.texcoord).r;
-                //float4 sceneColor = FragBilinear(input);
-                ////return sceneColor;
-                //float d1 = tex2D(_CameraDepthTexture, input.texcoord).r;
-                //float d2 = tex2D(_HalfResDepthTexture, input.texcoord).r;
-                //float d = max(d1, d2);
-
-                //return d2;
-            }
-            ENDHLSL
-        }
-
         // render
         Pass {
             ZWrite off
@@ -249,6 +219,7 @@ Shader "Custom/WaterShader"
             float4x4 _InverseProjection;
             float4x4 _InverseViewProjection;
             float3 _LightPos;
+            float _SpecularHighlight;
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -283,18 +254,13 @@ Shader "Custom/WaterShader"
                 float4 sceneColor = FragBilinear(input);
                 float2 uv = input.texcoord;
 
-                sampler2D depthTexture;
-                depthTexture = _SceneDepthTexture;
-                depthTexture = _CameraDepthTexture;
-                depthTexture = _DepthTexture;
-
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 // https://wickedengine.net/2019/09/improved-normal-reconstruction-from-depth/
-                float centerDepth = tex2D(depthTexture, uv + float2(0, 0) * texelSize).r;
-                float leftDepth   = tex2D(depthTexture, uv + float2(-1,0) * texelSize).r;
-                float rightDepth  = tex2D(depthTexture, uv + float2(1, 0) * texelSize).r;
-                float topDepth    = tex2D(depthTexture, uv + float2(0,-1) * texelSize).r;
-                float bottomDepth = tex2D(depthTexture, uv + float2(0, 1) * texelSize).r;
+                float centerDepth = tex2D(_DepthTexture, uv + float2(0, 0) * texelSize).r;
+                float leftDepth   = tex2D(_DepthTexture, uv + float2(-1,0) * texelSize).r;
+                float rightDepth  = tex2D(_DepthTexture, uv + float2(1, 0) * texelSize).r;
+                float topDepth    = tex2D(_DepthTexture, uv + float2(0,-1) * texelSize).r;
+                float bottomDepth = tex2D(_DepthTexture, uv + float2(0, 1) * texelSize).r;
 
                 float3 centerPos = reconstructPosition(uv + float2(0, 0) * texelSize, centerDepth);
                 float3 leftPos   = reconstructPosition(uv + float2(-1,0) * texelSize, leftDepth);
@@ -303,7 +269,7 @@ Shader "Custom/WaterShader"
                 float3 bottomPos = reconstructPosition(uv + float2(0, 1) * texelSize, bottomDepth);
 
                 if (centerDepth <= 0.01) {
-                    return sceneColor;
+                    //return sceneColor;
                 }
 
                 bool leftBest = abs(leftDepth - centerDepth) < abs(rightDepth - centerDepth);
@@ -326,47 +292,39 @@ Shader "Custom/WaterShader"
 
                 float ambient  = 0.1;
                 float diffuse  = 0.8 * saturate(dot(lightDir, normal));
-                float specular = 0.5 * pow(saturate(dot(halfDir, normal)), 150.0);
-
-                //return float4(1,1,1,1) * centerDepth;
-                //return float4(normal,1);
-                //return float4(1,1,1,1) * clamp(fresnel(dot(normal, viewDir)), 0.0, 0.6) * 0.3;
+                float specular = 0.5 * pow(saturate(dot(halfDir, normal)), _SpecularHighlight);
 
                 float thickness = tex2D(_ThicknessTexture, uv).r;
-                //return float4(thickness,thickness,thickness,1);
-                //return float4(centerDepth,centerDepth,centerDepth,1);
 
                 float3 fluidColor = float3(0.0, 0.4, 0.6);
                 float3 refractedColor = lerp(fluidColor, sceneColor.xyz, exp(-thickness));
-                //float3 refractedColor = lerp(fluidColor, sceneColor.xyz, exp(-thickness));
                 float3 reflectedColor = float3(1,1,1);
                 float fresnelFactor = fresnel(dot(normal, viewDir));
-                //return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
                 float3 col = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
-                //return float4(fluidColor, 1);
-                //return float4(1,0,0, 1);
-                // return float4(col, 1);
+                col = refractedColor + specular;
 
                 float light = ambient + diffuse + specular;
-                //float light = specular;
                 float3 color = sceneColor;
-                if (tex2D(_SceneDepthTexture, uv).r > tex2D(_DepthTexture, uv).r) {
-                    //return float4(1,0,0,1);
-                    //color = float3(0.0, 0.4, 0.6) * light;
-                }
                 color = col;
-                float d = tex2D(depthTexture, uv);
-                //return float4(d,d,d,1);
 
-                //return float4(normal, 1);
+                // manual depth test
+                float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
+                float fluidDepth = centerDepth;
+                if (sceneDepth > fluidDepth) {
+                    return sceneColor;
+                }
+
                 return float4(color, 1);
+                return float4(normal, 1);
+                return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
                 return float4(centerPos, 1);
+                return float4(centerDepth, centerDepth, centerDepth, 1);
             }
             ENDHLSL
         }
-        // clear depth
+        // depth blit
         Pass {
-            ZWrite On 
+            ZWrite On
             ZTest Off
 
             HLSLPROGRAM
@@ -374,15 +332,38 @@ Shader "Custom/WaterShader"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
             
+            sampler2D _CameraDepthTexture;
+            sampler2D _HalfResDepthTexture;
+
             #pragma vertex Vert
             #pragma fragment frag
 
             float frag(Varyings input) : SV_Depth
             {
-                return 0.0;
+                return tex2D(_HalfResDepthTexture, input.texcoord).r;
             }
             ENDHLSL
         }
+
+        //// clear depth
+        //Pass {
+        //    ZWrite On 
+        //    ZTest Off
+
+        //    HLSLPROGRAM
+
+        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+        //    
+        //    #pragma vertex Vert
+        //    #pragma fragment frag
+
+        //    float frag(Varyings input) : SV_Depth
+        //    {
+        //        return 0.0;
+        //    }
+        //    ENDHLSL
+        //}
         //// clear color
         //Pass {
         //    ZWrite Off

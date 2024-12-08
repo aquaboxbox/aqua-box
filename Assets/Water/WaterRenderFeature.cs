@@ -36,22 +36,16 @@ public class WaterRenderFeature : ScriptableRendererFeature
         public Mesh mesh;
         [Range(0, 1)]
         public float radius = 0.5f;
-
-        [Header("Grid")]
-        [Range(0, 20)]
-        public int gridSize = 3;
-        [Range(0, 10)]
-        public int randomSeed = 1;
-        public int randomParticles = 1000;
-        public Vector3 offset = new Vector3(0, 0, 0);
-        public int maxParticles = 100000;
+        public int maxParticles = 10000;
 
         [Header("Rendering")]
         public bool blur = false;
         public bool depth = false;
         public Vector3 lightPos = new Vector3(0, 0, 0);
-        public RenderPassEvent renderPassEvent;
+        public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
         public bool limitFps = false;
+        [Range(0f, 200f)]
+        public float specularHighlight = 100f;
     }
 
     public class WaterRenderPass : ScriptableRenderPass
@@ -115,6 +109,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
             material.SetFloat("_ThicknessSigma", this.settings.thicknessDistanceSigma);
 
             material.SetVector("_LightPos", this.settings.lightPos);
+            material.SetFloat("_SpecularHighlight", this.settings.specularHighlight);
 
         }
 
@@ -184,34 +179,24 @@ public class WaterRenderFeature : ScriptableRendererFeature
             int thicknessIndex = 1;
             int bilateralBlurIndex = 2;
             int gaussBlurIndex = 3;
-            int blitDepthIndex = 4;
-            int renderIndex = 5;
-            int clearDepthIndex = 6;
-
-            // Blit(cmd, depthHandle, depthHandle, this.material, clearDepthIndex);
-            // Blit(cmd, depthHalfResHandle, depthHalfResHandle, this.material, clearDepthIndex);
+            int renderIndex = 4;
+            int blitDepthIndex = 5;
 
             // render depth
             cmd.SetRenderTarget(this.depthHandle);
             this.DrawSpheres(cmd, depthIndex, camera);
 
-            // blur particles
+            // blur depth
             Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
             Blit(cmd, this.depthHalfResHandle, this.depthHandle, this.material, blitDepthIndex);
-            //Blit(cmd, this.depthHalfResHandle, this.depthHandle);
-            // combine with existing depth buffer
-            // cmd.SetRenderTarget(depthTarget, depthTarget);
-            //Blit(cmd, this.depthHandle, this.depthHandle, this.material, blitDepthIndex);
 
             // render thickness
-            // TODO: BLUR THIS?
             cmd.SetRenderTarget(this.thicknessHandle);
             this.DrawSpheres(cmd, thicknessIndex, camera);
 
+            // blur thickness
             Blit(cmd, this.thicknessHandle, this.thicknessHalfResHandle, this.material, gaussBlurIndex);
             Blit(cmd, this.thicknessHalfResHandle, this.thicknessHandle);
-
-            // render
 
             if (this.settings.depth)
             {
@@ -221,13 +206,11 @@ public class WaterRenderFeature : ScriptableRendererFeature
                 Blit(cmd, thicknessHandle, colorTarget);
             else
             {
+                // render
                 cmd.SetRenderTarget(depthTarget, depthTarget);
+                this.material.SetTexture("_SceneDepthTexture", depthTarget);
                 Blit(cmd, colorTarget, colorTarget, this.material, renderIndex);
-                // this.material.SetTexture("_SceneDepthTexture", depthTarget);
-                // cmd.SetRenderTarget(colorTarget, depthTarget);
-                // Blit(cmd, depthTarget, colorTarget);
             }
-
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
@@ -235,11 +218,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
         void DrawSpheres(CommandBuffer cmd, int pass_index, Camera camera)
         {
-            int gridSize = this.settings.gridSize;
             List<Vector4> centers = new();
-
-            UnityEngine.Random.InitState(this.settings.randomSeed);
-
 
             PBDFluid.FluidSetup fluidSimulation = FindObjectOfType<PBDFluid.FluidSetup>();
             if (fluidSimulation.m_fluid != null)
