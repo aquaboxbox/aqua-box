@@ -23,7 +23,6 @@ public class ParticleControl : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.X)) ActivateParticle(); // For debugging
 
-
         if(Input.GetKeyDown(KeyCode.B)) KillParticle(); // For debugging
     }
 
@@ -37,6 +36,7 @@ public class ParticleControl : MonoBehaviour
             child.gameObject.SetActive(true);
         }
 
+        transform.Find("Point Light").gameObject.SetActive(true);
         // Find the child object named "Sphere"
         Transform sphereChild = transform.Find("Sphere");
         if (sphereChild != null)
@@ -97,6 +97,7 @@ public class ParticleControl : MonoBehaviour
         {
             // Deactivate the "Fire" object
             fireChild.gameObject.SetActive(false);
+            transform.Find("Point Light").gameObject.SetActive(false);
         }
         else
         {
