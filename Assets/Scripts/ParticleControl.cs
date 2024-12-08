@@ -8,9 +8,13 @@ public class ParticleControl : MonoBehaviour
     private Vector3 centerPosition;
     public float moveSpeed = 3f;
     private bool isColliding = false;
+    private int currentCollider = 0;
     
+    private Rigidbody rb;
+
     void Start()
-    {
+    {   
+        rb = GetComponent<Rigidbody>();
         DisableParticle();
     }
 
@@ -18,10 +22,7 @@ public class ParticleControl : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.X)) ActivateParticle(); // For debugging
 
-        if(!isColliding)
-        {
-            GoToCenter();
-        } 
+
     }
 
     void ActivateParticle()
@@ -58,22 +59,12 @@ public class ParticleControl : MonoBehaviour
         }
     }
 
-    private void GoToCenter()
-    {
-        if (Vector3.Distance(transform.position, centerPosition) > 0.001f)
-        {
-            transform.position = Vector3.Lerp(transform.position, centerPosition, moveSpeed * Time.deltaTime);
-        }
+    private void OnCollisionEnter(Collision other) 
+    {   
+        FindCenterOfCube();
+        transform.position = centerPosition;
+
+        Debug.Log("Collision!");
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        isColliding = true;
-    }
-
-
-    private void OnCollisionExit(Collision collision)
-    {
-        isColliding = false;
-    }
 }
