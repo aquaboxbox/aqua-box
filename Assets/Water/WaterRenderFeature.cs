@@ -15,9 +15,9 @@ public class WaterRenderFeature : ScriptableRendererFeature
         public int depthBlurRadius = 5;
         [Range(0.1f, 20f)]
         public float depthDistanceSigma = 1.0f;
-        [Range(0.0001f, 0.2f)]
+        [Range(0.0001f, 0.01f)]
         public float depthIntesitySigma = 1.0f;
-        [Range(0, 3.0f)]
+        [Range(0, 0.5f)]
         public float depthRounding = 0.05f;
         [Range(1, 8)]
         public int depthBlurResolution = 1;
@@ -42,7 +42,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
         public bool blur = false;
         public bool depth = false;
         public Vector3 lightPos = new Vector3(0, 0, 0);
-        public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
         public bool limitFps = false;
         [Range(0f, 200f)]
         public float specularHighlight = 100f;
@@ -97,8 +96,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
                 Debug.LogWarning("No material set for water render pass");
                 return;
             }
-
-            // material.SetFloat("_Radius", this.settings.radius);
 
             //TODO MISMATCH?
             material.SetInt("_BlurRadius", this.settings.depthBlurRadius);
@@ -163,19 +160,30 @@ public class WaterRenderFeature : ScriptableRendererFeature
             material.SetMatrix("_InverseProjection", projectionMatrix.inverse);
             material.SetMatrix("_InverseViewProjection", viewProjectionMatrix.inverse);
 
-            cmd.SetRenderTarget(depthHandle);
-            cmd.ClearRenderTarget(true, false, Color.clear);
-            cmd.SetRenderTarget(depthHorizontalHandle);
-            cmd.ClearRenderTarget(true, false, Color.clear);
-            cmd.SetRenderTarget(depthVerticalHandle);
-
-            cmd.ClearRenderTarget(true, false, Color.clear);
-            cmd.SetRenderTarget(thicknessHandle);
-            cmd.ClearRenderTarget(false, true, Color.clear);
-            cmd.SetRenderTarget(thicknessHorizontalHandle);
-            cmd.ClearRenderTarget(false, true, Color.clear);
-            cmd.SetRenderTarget(thicknessVerticalHandle);
-            cmd.ClearRenderTarget(false, true, Color.clear);
+            RTHandle[] handles = {
+                depthHandle,
+                depthHorizontalHandle,
+                depthVerticalHandle,
+                thicknessHandle, thicknessHorizontalHandle, thicknessVerticalHandle
+            };
+            foreach (var handle in handles)
+            {
+                cmd.SetRenderTarget(handle);
+                cmd.ClearRenderTarget(true, true, Color.clear);
+            }
+            // cmd.SetRenderTarget(depthHandle);
+            // cmd.ClearRenderTarget(true, false, Color.clear);
+            // cmd.SetRenderTarget(depthHorizontalHandle);
+            // cmd.ClearRenderTarget(true, false, Color.clear);
+            // cmd.SetRenderTarget(depthVerticalHandle);
+            //
+            // cmd.ClearRenderTarget(true, false, Color.clear);
+            // cmd.SetRenderTarget(thicknessHandle);
+            // cmd.ClearRenderTarget(false, true, Color.clear);
+            // cmd.SetRenderTarget(thicknessHorizontalHandle);
+            // cmd.ClearRenderTarget(false, true, Color.clear);
+            // cmd.SetRenderTarget(thicknessVerticalHandle);
+            // cmd.ClearRenderTarget(false, true, Color.clear);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -196,7 +204,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
             int thicknessBlurHorizontalIndex = 4;
             int thicknessBlurVerticalIndex = 5;
             int renderIndex = 6;
-            int blitDepthIndex = 7;
 
             // render depth
             cmd.SetRenderTarget(this.depthHandle);
@@ -205,7 +212,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
             // blur depth
             Blit(cmd, this.depthHorizontalHandle, this.depthHorizontalHandle, this.material, depthBlurHorizontalIndex);
             Blit(cmd, this.depthVerticalHandle, this.depthVerticalHandle, this.material, depthBlurVerticalIndex);
-            //Blit(cmd, this.depthVerticalHandle, this.depthHandle, this.material, blitDepthIndex);
 
             // render thickness
             cmd.SetRenderTarget(this.thicknessHandle);
@@ -214,7 +220,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
             // blur thickness
             Blit(cmd, this.thicknessHorizontalHandle, this.thicknessHorizontalHandle, this.material, thicknessBlurHorizontalIndex);
             Blit(cmd, this.thicknessVerticalHandle, this.thicknessVerticalHandle, this.material, thicknessBlurVerticalIndex);
-            // Blit(cmd, this.thicknessHorizontalHandle, this.thicknessHandle);
 
             if (this.settings.depth)
             {
@@ -226,7 +231,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
             {
                 // render
                 cmd.SetRenderTarget(depthTarget, depthTarget);
-                this.material.SetTexture("_SceneDepthTexture", depthTarget);
                 Blit(cmd, colorTarget, colorTarget, this.material, renderIndex);
             }
 
@@ -329,7 +333,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
         this.material = new Material(this.shader);
         this.renderPass = new WaterRenderPass(this.material, this.settings);
 
-        this.renderPass.renderPassEvent = this.settings.renderPassEvent;
+        this.renderPass.renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
     }
 
     protected override void Dispose(bool disposing)

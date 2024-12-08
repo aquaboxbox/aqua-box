@@ -99,6 +99,7 @@ Shader "Custom/WaterShader"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Gaussian.hlsl"
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -108,22 +109,12 @@ Shader "Custom/WaterShader"
             float _IntensitySigma;
             float _DistanceSigma;
 
-            // x: distance from x0
-            float gaussian1(float x, float sigma) {
-                return exp(-(x * x) / (2.0 * sigma * sigma));
-            }
-
-            // x: distance from x0
-            // y: distance from y0
-            float gaussian2(float x, float y, float sigma) {
-                return exp(-(x * x + y * y) / (2.0 * sigma * sigma));
-            }
-
             float frag(Varyings input) : SV_Depth
             {
                 float2 uv = input.texcoord.xy;
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 float depth = tex2D(_DepthTexture, uv).r;
+
                 //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
                 int kernelSize = _BlurRadius;
 
@@ -157,6 +148,7 @@ Shader "Custom/WaterShader"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Gaussian.hlsl"
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -165,17 +157,6 @@ Shader "Custom/WaterShader"
             int _BlurRadius;
             float _IntensitySigma;
             float _DistanceSigma;
-
-            // x: distance from x0
-            float gaussian1(float x, float sigma) {
-                return exp(-(x * x) / (2.0 * sigma * sigma));
-            }
-
-            // x: distance from x0
-            // y: distance from y0
-            float gaussian2(float x, float y, float sigma) {
-                return exp(-(x * x + y * y) / (2.0 * sigma * sigma));
-            }
 
             float frag(Varyings input) : SV_Depth
             {
@@ -215,6 +196,7 @@ Shader "Custom/WaterShader"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Gaussian.hlsl"
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -222,11 +204,6 @@ Shader "Custom/WaterShader"
             sampler2D _ThicknessTexture;
             int _ThicknessBlurRadius;
             float _ThicknessSigma;
-
-            // x: distance from x0
-            float gaussian1(float x, float sigma) {
-                return exp(-(x * x) / (2.0 * sigma * sigma));
-            }
 
             float4 frag(Varyings input) : SV_Target
             {
@@ -261,6 +238,7 @@ Shader "Custom/WaterShader"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Gaussian.hlsl"
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -268,11 +246,6 @@ Shader "Custom/WaterShader"
             sampler2D _ThicknessHorizontalTexture;
             int _ThicknessBlurRadius;
             float _ThicknessSigma;
-
-            // x: distance from x0
-            float gaussian1(float x, float sigma) {
-                return exp(-(x * x) / (2.0 * sigma * sigma));
-            }
 
             float4 frag(Varyings input) : SV_Target
             {
@@ -312,7 +285,6 @@ Shader "Custom/WaterShader"
             sampler2D _CameraDepthTexture;
             sampler2D _DepthVerticalTexture;
             sampler2D _ThicknessVerticalTexture;
-            //sampler2D _SceneDepthTexture;
 
             float4x4 _InverseView;
             float4x4 _InverseProjection;
@@ -367,10 +339,6 @@ Shader "Custom/WaterShader"
                 float3 topPos    = reconstructPosition(uv + float2(0,-1) * texelSize, topDepth);
                 float3 bottomPos = reconstructPosition(uv + float2(0, 1) * texelSize, bottomDepth);
 
-                if (centerDepth <= 0.01) {
-                    //return sceneColor;
-                }
-
                 bool leftBest = abs(leftDepth - centerDepth) < abs(rightDepth - centerDepth);
                 bool topBest = abs(topDepth - centerDepth) < abs(bottomDepth - centerDepth);
 
@@ -389,8 +357,8 @@ Shader "Custom/WaterShader"
                 float3 viewDir = normalize(_WorldSpaceCameraPos - centerPos);
                 float3 halfDir = normalize(lightDir + viewDir);
 
-                float ambient  = 0.1;
-                float diffuse  = 0.8 * saturate(dot(lightDir, normal));
+                //float ambient  = 0.1;
+                //float diffuse  = 0.8 * saturate(dot(lightDir, normal));
                 float specular = 0.5 * pow(saturate(dot(halfDir, normal)), _SpecularHighlight);
 
                 float thickness = tex2D(_ThicknessVerticalTexture, uv).r;
@@ -399,12 +367,9 @@ Shader "Custom/WaterShader"
                 float3 refractedColor = lerp(fluidColor, sceneColor.xyz, exp(-thickness));
                 float3 reflectedColor = float3(1,1,1);
                 float fresnelFactor = fresnel(dot(normal, viewDir));
-                float3 col = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
-                col = refractedColor + specular;
-
-                float light = ambient + diffuse + specular;
-                float3 color = sceneColor;
-                color = col;
+                //float3 col = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
+                float3 color = refractedColor + specular;
+                //float3 color = diffuse * float3(1,1,1);
 
                 // depth test
                 float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
