@@ -9,7 +9,8 @@ public class ParticleControl : MonoBehaviour
     public float moveSpeed = 3f;
     private bool isColliding = false;
     private int currentCollider = 0;
-    
+    [SerializeField] private Material deadParticle;
+    [SerializeField] private Material aliveParticle;
     private Rigidbody rb;
 
     void Start()
@@ -23,6 +24,7 @@ public class ParticleControl : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.X)) ActivateParticle(); // For debugging
 
 
+        if(Input.GetKeyDown(KeyCode.B)) KillParticle(); // For debugging
     }
 
     void ActivateParticle()
@@ -33,6 +35,26 @@ public class ParticleControl : MonoBehaviour
         foreach (Transform child in transform)
         {
             child.gameObject.SetActive(true);
+        }
+
+        // Find the child object named "Sphere"
+        Transform sphereChild = transform.Find("Sphere");
+        if (sphereChild != null)
+        {
+            // Get the Renderer component and assign the new material
+            Renderer sphereRenderer = sphereChild.GetComponent<Renderer>();
+            if (sphereRenderer != null && aliveParticle != null)
+            {
+                sphereRenderer.material = aliveParticle;
+            }
+            else
+            {
+                Debug.LogWarning("Renderer component or 'aliveParticle' material is missing.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Child object 'Sphere' not found.");
         }
     }
 
@@ -67,4 +89,38 @@ public class ParticleControl : MonoBehaviour
         Debug.Log("Collision!");
     }
 
+    private void KillParticle()
+    {
+        // Find the child object named "Fire"
+        Transform fireChild = transform.Find("Fire");
+        if (fireChild != null)
+        {
+            // Deactivate the "Fire" object
+            fireChild.gameObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("Child object 'Fire' not found.");
+        }
+
+        // Find the child object named "Sphere"
+        Transform sphereChild = transform.Find("Sphere");
+        if (sphereChild != null)
+        {
+            // Get the Renderer component and assign the new material
+            Renderer sphereRenderer = sphereChild.GetComponent<Renderer>();
+            if (sphereRenderer != null && deadParticle != null)
+            {
+                sphereRenderer.material = deadParticle;
+            }
+            else
+            {
+                Debug.LogWarning("Renderer component or 'deadParticle' material is missing.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Child object 'Sphere' not found.");
+        }
+    }
 }
