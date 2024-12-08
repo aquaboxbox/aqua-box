@@ -196,8 +196,9 @@ public class WaterRenderFeature : ScriptableRendererFeature
             this.DrawSpheres(cmd, depthIndex, camera);
 
             // blur particles
-            //Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
-            //Blit(cmd, this.depthHalfResHandle, this.depthHandle, this.material, blitDepthIndex);
+            Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
+            Blit(cmd, this.depthHalfResHandle, this.depthHandle, this.material, blitDepthIndex);
+            //Blit(cmd, this.depthHalfResHandle, this.depthHandle);
             // combine with existing depth buffer
             // cmd.SetRenderTarget(depthTarget, depthTarget);
             //Blit(cmd, this.depthHandle, this.depthHandle, this.material, blitDepthIndex);
@@ -207,8 +208,8 @@ public class WaterRenderFeature : ScriptableRendererFeature
             cmd.SetRenderTarget(this.thicknessHandle);
             this.DrawSpheres(cmd, thicknessIndex, camera);
 
-            //Blit(cmd, this.thicknessHandle, this.thicknessHalfResHandle, this.material, gaussBlurIndex);
-            //Blit(cmd, this.thicknessHalfResHandle, this.thicknessHandle);
+            Blit(cmd, this.thicknessHandle, this.thicknessHalfResHandle, this.material, gaussBlurIndex);
+            Blit(cmd, this.thicknessHalfResHandle, this.thicknessHandle);
 
             // render
 

@@ -127,7 +127,6 @@ Shader "Custom/WaterShader"
                 float depth = tex2D(_DepthTexture, uv).r;
                 //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
                 int kernelSize = _BlurRadius;
-                return depth;
 
                 float sum = 0.0;
                 float weightSum = 0.0;
@@ -219,7 +218,7 @@ Shader "Custom/WaterShader"
 
             float frag(Varyings input) : SV_Depth
             {
-                return tex2D(_CameraDepthTexture, input.texcoord).r;
+                return tex2D(_HalfResDepthTexture, input.texcoord).r;
                 //float4 sceneColor = FragBilinear(input);
                 ////return sceneColor;
                 //float d1 = tex2D(_CameraDepthTexture, input.texcoord).r;
