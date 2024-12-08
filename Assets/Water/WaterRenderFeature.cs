@@ -102,7 +102,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
                 return;
             }
 
-            material.SetFloat("_Radius", this.settings.radius);
+            // material.SetFloat("_Radius", this.settings.radius);
 
             //TODO MISMATCH?
             material.SetInt("_BlurRadius", this.settings.depthBlurRadius);
@@ -196,8 +196,8 @@ public class WaterRenderFeature : ScriptableRendererFeature
             this.DrawSpheres(cmd, depthIndex, camera);
 
             // blur particles
-            Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
-            Blit(cmd, this.depthHalfResHandle, this.depthHandle);
+            //Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
+            //Blit(cmd, this.depthHalfResHandle, this.depthHandle, this.material, blitDepthIndex);
             // combine with existing depth buffer
             // cmd.SetRenderTarget(depthTarget, depthTarget);
             //Blit(cmd, this.depthHandle, this.depthHandle, this.material, blitDepthIndex);
@@ -207,14 +207,17 @@ public class WaterRenderFeature : ScriptableRendererFeature
             cmd.SetRenderTarget(this.thicknessHandle);
             this.DrawSpheres(cmd, thicknessIndex, camera);
 
-            Blit(cmd, this.thicknessHandle, this.thicknessHalfResHandle, this.material, gaussBlurIndex);
-            Blit(cmd, this.thicknessHalfResHandle, this.thicknessHandle);
+            //Blit(cmd, this.thicknessHandle, this.thicknessHalfResHandle, this.material, gaussBlurIndex);
+            //Blit(cmd, this.thicknessHalfResHandle, this.thicknessHandle);
 
             // render
+
             if (this.settings.depth)
             {
                 Blit(cmd, depthHandle, colorTarget);
             }
+            else if (this.settings.blur)
+                Blit(cmd, thicknessHandle, colorTarget);
             else
             {
                 cmd.SetRenderTarget(depthTarget, depthTarget);
@@ -244,11 +247,11 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
                 this.positionBuffer = fluidSimulation.GetPositionBuffer();
 
-
-
                 this.indirectDrawArgs[1] = (uint)fluidSimulation.GetPositionBuffer().count;
                 this.indirectDrawArgsBuffer.SetData(this.indirectDrawArgs);
 
+                this.material.SetFloat("_Radius", this.settings.radius);
+                //this.material.SetFloat("_Radius", fluidSimulation.radius / 8); // TODO: this does not map correctly, fluidSimulation.radius is probably in world space
                 this.material.SetFloat("_Scale", fluidSimulation.scale);
                 this.material.SetFloat("_Damping", fluidSimulation.damping);
                 this.material.SetVector("_SimulationCenter", fluidSimulation.transform.position);

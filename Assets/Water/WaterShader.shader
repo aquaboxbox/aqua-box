@@ -15,76 +15,14 @@ Shader "Custom/WaterShader"
             ZWrite On
             
             CGPROGRAM
-            #pragma vertex vert
+            #pragma vertex BillboardVert
             #pragma fragment frag
             #pragma multi_compile_instancing
+
             #include "UnityCG.cginc"
+            #include "BillboardVert.hlsl"
 
-            struct VertexInput
-            {
-                float4 model_pos : POSITION;
-                float2 uv: TEXCOORD0;
-                uint id: SV_VertexID;
-
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct VertexOutput
-            {
-                float4 clipPos : SV_POSITION;
-                float2 uv: TEXCOORD0;
-                float3 worldPos : W_POSITION;
-
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            float _Radius;
             float _DepthRounding;
-            StructuredBuffer<float4> _PositionBuffer;
-            float _Scale;
-            float _Damping;
-            float3 _SimulationCenter;
-
-            VertexOutput vert(VertexInput vIn, uint instanceID : SV_InstanceID)
-            {
-                VertexOutput vOut;
-
-                UNITY_SETUP_INSTANCE_ID(vIn);
-                UNITY_TRANSFER_INSTANCE_ID(vIn, vOut);
-
-                // Generate model pos
-                float3 center = _PositionBuffer[instanceID] * _Scale + _SimulationCenter * _Damping;;
-                float3 cameraPos = _WorldSpaceCameraPos;
-
-                float3 cameraDir = normalize(cameraPos - center);
-                float3 upDir = normalize(float3(0.0, 1.0, 0.0));
-                float3 v = normalize(cross(cameraDir, upDir));
-                float3 u = normalize(cross(v, cameraDir));
-
-                float3 worldPos = center;
-                //worldPos = center;
-                int id = vIn.id;
-                if (id == 0) {
-                    worldPos -= u * _Radius;
-                    worldPos -= v * _Radius;
-                } else if (id == 1) {
-                    worldPos -= u * _Radius;
-                    worldPos += v * _Radius;
-                } else if (id == 2) {
-                    worldPos += u * _Radius;
-                    worldPos -= v * _Radius;
-                } else if (id == 3) {
-                    worldPos += u * _Radius;
-                    worldPos += v * _Radius;
-                }
-
-                vOut.clipPos = UnityObjectToClipPos(float4(worldPos, 1));
-                vOut.worldPos = worldPos;
-                vOut.uv = vIn.uv;
-
-                return vOut;
-            }
-
 
             float frag(VertexOutput vIn): SV_Depth
             {
@@ -120,77 +58,14 @@ Shader "Custom/WaterShader"
             Blend SrcAlpha OneMinusSrcAlpha
             
             CGPROGRAM
-            #pragma vertex vert
+            #pragma vertex BillboardVert
             #pragma fragment frag
             #pragma multi_compile_instancing
+
             #include "UnityCG.cginc"
+            #include "BillboardVert.hlsl"
 
-            struct VertexInput
-            {
-                float4 model_pos : POSITION;
-                float2 uv: TEXCOORD0;
-                uint id: SV_VertexID;
-
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct VertexOutput
-            {
-                float4 clipPos : SV_POSITION;
-                float2 uv: TEXCOORD0;
-                float3 worldPos : W_POSITION;
-
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            float _Radius;
             float _Thickness;
-            StructuredBuffer<float4> _PositionBuffer;
-            float _Scale;
-            float _Damping;
-            float3 _SimulationCenter;
-
-            VertexOutput vert(VertexInput vIn, uint instanceID : SV_InstanceID)
-            {
-                VertexOutput vOut;
-
-                UNITY_SETUP_INSTANCE_ID(vIn);
-                UNITY_TRANSFER_INSTANCE_ID(vIn, vOut);
-
-                // Generate model pos
-                //float3 center = _PositionBuffer[instanceID];
-                float3 center = _PositionBuffer[instanceID] * _Scale + _SimulationCenter * _Damping;;
-                float3 cameraPos = _WorldSpaceCameraPos;
-
-                float3 cameraDir = normalize(cameraPos - center);
-                float3 upDir = normalize(float3(0.0, 1.0, 0.0));
-                float3 v = normalize(cross(cameraDir, upDir));
-                float3 u = normalize(cross(v, cameraDir));
-
-                float3 worldPos = center;
-                //worldPos = center;
-                int id = vIn.id;
-                if (id == 0) {
-                    worldPos -= u * _Radius;
-                    worldPos -= v * _Radius;
-                } else if (id == 1) {
-                    worldPos -= u * _Radius;
-                    worldPos += v * _Radius;
-                } else if (id == 2) {
-                    worldPos += u * _Radius;
-                    worldPos -= v * _Radius;
-                } else if (id == 3) {
-                    worldPos += u * _Radius;
-                    worldPos += v * _Radius;
-                }
-
-                vOut.clipPos = UnityObjectToClipPos(float4(worldPos, 1));
-                vOut.worldPos = worldPos;
-                vOut.uv = vIn.uv;
-
-                return vOut;
-            }
-
 
             float4 frag(VertexOutput vIn): SV_Target
             {
@@ -252,6 +127,7 @@ Shader "Custom/WaterShader"
                 float depth = tex2D(_DepthTexture, uv).r;
                 //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
                 int kernelSize = _BlurRadius;
+                return depth;
 
                 float sum = 0.0;
                 float weightSum = 0.0;
@@ -343,13 +219,14 @@ Shader "Custom/WaterShader"
 
             float frag(Varyings input) : SV_Depth
             {
-                float4 sceneColor = FragBilinear(input);
-                //return sceneColor;
-                float d1 = tex2D(_CameraDepthTexture, input.texcoord).r;
-                float d2 = tex2D(_HalfResDepthTexture, input.texcoord).r;
-                float d = max(d1, d2);
+                return tex2D(_CameraDepthTexture, input.texcoord).r;
+                //float4 sceneColor = FragBilinear(input);
+                ////return sceneColor;
+                //float d1 = tex2D(_CameraDepthTexture, input.texcoord).r;
+                //float d2 = tex2D(_HalfResDepthTexture, input.texcoord).r;
+                //float d = max(d1, d2);
 
-                return d;
+                //return d2;
             }
             ENDHLSL
         }
@@ -407,13 +284,18 @@ Shader "Custom/WaterShader"
                 float4 sceneColor = FragBilinear(input);
                 float2 uv = input.texcoord;
 
+                sampler2D depthTexture;
+                depthTexture = _SceneDepthTexture;
+                depthTexture = _CameraDepthTexture;
+                depthTexture = _DepthTexture;
+
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 // https://wickedengine.net/2019/09/improved-normal-reconstruction-from-depth/
-                float centerDepth = tex2D(_DepthTexture, uv + float2(0, 0) * texelSize).r;
-                float leftDepth   = tex2D(_DepthTexture, uv + float2(-1,0) * texelSize).r;
-                float rightDepth  = tex2D(_DepthTexture, uv + float2(1, 0) * texelSize).r;
-                float topDepth    = tex2D(_DepthTexture, uv + float2(0,-1) * texelSize).r;
-                float bottomDepth = tex2D(_DepthTexture, uv + float2(0, 1) * texelSize).r;
+                float centerDepth = tex2D(depthTexture, uv + float2(0, 0) * texelSize).r;
+                float leftDepth   = tex2D(depthTexture, uv + float2(-1,0) * texelSize).r;
+                float rightDepth  = tex2D(depthTexture, uv + float2(1, 0) * texelSize).r;
+                float topDepth    = tex2D(depthTexture, uv + float2(0,-1) * texelSize).r;
+                float bottomDepth = tex2D(depthTexture, uv + float2(0, 1) * texelSize).r;
 
                 float3 centerPos = reconstructPosition(uv + float2(0, 0) * texelSize, centerDepth);
                 float3 leftPos   = reconstructPosition(uv + float2(-1,0) * texelSize, leftDepth);
@@ -421,9 +303,9 @@ Shader "Custom/WaterShader"
                 float3 topPos    = reconstructPosition(uv + float2(0,-1) * texelSize, topDepth);
                 float3 bottomPos = reconstructPosition(uv + float2(0, 1) * texelSize, bottomDepth);
 
-                //if (centerDepth <= 0.01) {
-                //    return sceneColor;
-                //}
+                if (centerDepth <= 0.01) {
+                    return sceneColor;
+                }
 
                 bool leftBest = abs(leftDepth - centerDepth) < abs(rightDepth - centerDepth);
                 bool topBest = abs(topDepth - centerDepth) < abs(bottomDepth - centerDepth);
@@ -431,9 +313,9 @@ Shader "Custom/WaterShader"
                 float3 P0 = centerPos;
                 float3 P1;
                 float3 P2;
-                if (leftBest  && topBest) { P1 = leftPos; P2 = topPos; }         // top left
-                if (!leftBest && topBest) { P1 = topPos; P2 = rightPos; }       // top right
-                if (leftBest  && !topBest) { P1 = bottomPos; P2 = leftPos; }     // bottom left
+                if (leftBest  && topBest)  { P1 = leftPos; P2 = topPos; }       // top left
+                if (!leftBest && topBest)  { P1 = topPos; P2 = rightPos; }      // top right
+                if (leftBest  && !topBest) { P1 = bottomPos; P2 = leftPos; }    // bottom left
                 if (!leftBest && !topBest) { P1 = rightPos; P2 = bottomPos; }   // bottom right
 
                 float3 normal = normalize(cross(P2 - P0, P1 - P0));
@@ -469,16 +351,15 @@ Shader "Custom/WaterShader"
                 float light = ambient + diffuse + specular;
                 //float light = specular;
                 float3 color = sceneColor;
-                //if (tex2D(_SceneDepthTexture, uv).r > tex2D(_DepthTexture, uv).r) {
+                if (tex2D(_SceneDepthTexture, uv).r > tex2D(_DepthTexture, uv).r) {
                     //return float4(1,0,0,1);
                     //color = float3(0.0, 0.4, 0.6) * light;
-                //}
+                }
                 color = col;
-                //return tex2D(_CameraDepthTexture, uv);
-                //return tex2D(_SceneDepthTexture, uv);
-                //return tex2D(_DepthTexture, uv);
+                float d = tex2D(depthTexture, uv);
+                //return float4(d,d,d,1);
 
-                //return sceneColor;
+                //return float4(normal, 1);
                 return float4(color, 1);
                 return float4(centerPos, 1);
             }
