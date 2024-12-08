@@ -56,10 +56,12 @@ public class WaterRenderFeature : ScriptableRendererFeature
         private RenderTextureDescriptor thicknessTextureDesc;
 
         private RTHandle depthHandle;
-        private RTHandle depthHalfResHandle;
+        private RTHandle depthHorizontalHandle;
+        private RTHandle depthVerticalHandle;
 
         private RTHandle thicknessHandle;
-        private RTHandle thicknessHalfResHandle;
+        private RTHandle thicknessHorizontalHandle;
+        private RTHandle thicknessVerticalHandle;
 
         private ComputeBuffer positionBuffer;
         private ComputeBuffer indirectDrawArgsBuffer;
@@ -120,18 +122,22 @@ public class WaterRenderFeature : ScriptableRendererFeature
             // Full res
             this.depthTextureDesc.width = cameraTextureDescriptor.width;
             this.depthTextureDesc.height = cameraTextureDescriptor.height;
-            RenderingUtils.ReAllocateIfNeeded(ref depthHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             this.thicknessTextureDesc.width = cameraTextureDescriptor.width;
             this.thicknessTextureDesc.height = cameraTextureDescriptor.height;
+
+            RenderingUtils.ReAllocateIfNeeded(ref depthHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             RenderingUtils.ReAllocateIfNeeded(ref thicknessHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
 
             // Half res
             this.depthTextureDesc.width = cameraTextureDescriptor.width / this.settings.depthBlurResolution;
             this.depthTextureDesc.height = cameraTextureDescriptor.height / this.settings.depthBlurResolution;
-            RenderingUtils.ReAllocateIfNeeded(ref depthHalfResHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             this.thicknessTextureDesc.width = cameraTextureDescriptor.width / this.settings.thicknessBlurResolution;
             this.thicknessTextureDesc.height = cameraTextureDescriptor.height / this.settings.thicknessBlurResolution;
-            RenderingUtils.ReAllocateIfNeeded(ref thicknessHalfResHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
+
+            RenderingUtils.ReAllocateIfNeeded(ref depthHorizontalHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
+            RenderingUtils.ReAllocateIfNeeded(ref depthVerticalHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
+            RenderingUtils.ReAllocateIfNeeded(ref thicknessHorizontalHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
+            RenderingUtils.ReAllocateIfNeeded(ref thicknessVerticalHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
         }
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
@@ -140,9 +146,12 @@ public class WaterRenderFeature : ScriptableRendererFeature
             // renderingData.cameraData.requiresDepthTexture = true;
 
             this.material.SetTexture("_DepthTexture", this.depthHandle);
-            this.material.SetTexture("_HalfResDepthTexture", this.depthHalfResHandle);
+            this.material.SetTexture("_DepthHorizontalTexture", this.depthHorizontalHandle);
+            this.material.SetTexture("_DepthVerticalTexture", this.depthVerticalHandle);
+
             this.material.SetTexture("_ThicknessTexture", this.thicknessHandle);
-            this.material.SetTexture("_HalfResThicknessTexture", this.thicknessHalfResHandle);
+            this.material.SetTexture("_ThicknessHorizontalTexture", this.thicknessHorizontalHandle);
+            this.material.SetTexture("_ThicknessVerticalTexture", this.thicknessVerticalHandle);
 
             this.material.SetBuffer("_PositionBuffer", this.positionBuffer);
 
@@ -156,11 +165,16 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
             cmd.SetRenderTarget(depthHandle);
             cmd.ClearRenderTarget(true, false, Color.clear);
-            cmd.SetRenderTarget(depthHalfResHandle);
+            cmd.SetRenderTarget(depthHorizontalHandle);
+            cmd.ClearRenderTarget(true, false, Color.clear);
+            cmd.SetRenderTarget(depthVerticalHandle);
+
             cmd.ClearRenderTarget(true, false, Color.clear);
             cmd.SetRenderTarget(thicknessHandle);
             cmd.ClearRenderTarget(false, true, Color.clear);
-            cmd.SetRenderTarget(thicknessHalfResHandle);
+            cmd.SetRenderTarget(thicknessHorizontalHandle);
+            cmd.ClearRenderTarget(false, true, Color.clear);
+            cmd.SetRenderTarget(thicknessVerticalHandle);
             cmd.ClearRenderTarget(false, true, Color.clear);
         }
 
@@ -177,33 +191,37 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
             int depthIndex = 0;
             int thicknessIndex = 1;
-            int bilateralBlurIndex = 2;
-            int gaussBlurIndex = 3;
-            int renderIndex = 4;
-            int blitDepthIndex = 5;
+            int depthBlurHorizontalIndex = 2;
+            int depthBlurVerticalIndex = 3;
+            int thicknessBlurHorizontalIndex = 4;
+            int thicknessBlurVerticalIndex = 5;
+            int renderIndex = 6;
+            int blitDepthIndex = 7;
 
             // render depth
             cmd.SetRenderTarget(this.depthHandle);
             this.DrawSpheres(cmd, depthIndex, camera);
 
             // blur depth
-            Blit(cmd, this.depthHalfResHandle, this.depthHalfResHandle, this.material, bilateralBlurIndex);
-            Blit(cmd, this.depthHalfResHandle, this.depthHandle, this.material, blitDepthIndex);
+            Blit(cmd, this.depthHorizontalHandle, this.depthHorizontalHandle, this.material, depthBlurHorizontalIndex);
+            Blit(cmd, this.depthVerticalHandle, this.depthVerticalHandle, this.material, depthBlurVerticalIndex);
+            //Blit(cmd, this.depthVerticalHandle, this.depthHandle, this.material, blitDepthIndex);
 
             // render thickness
             cmd.SetRenderTarget(this.thicknessHandle);
             this.DrawSpheres(cmd, thicknessIndex, camera);
 
             // blur thickness
-            Blit(cmd, this.thicknessHandle, this.thicknessHalfResHandle, this.material, gaussBlurIndex);
-            Blit(cmd, this.thicknessHalfResHandle, this.thicknessHandle);
+            Blit(cmd, this.thicknessHorizontalHandle, this.thicknessHorizontalHandle, this.material, thicknessBlurHorizontalIndex);
+            Blit(cmd, this.thicknessVerticalHandle, this.thicknessVerticalHandle, this.material, thicknessBlurVerticalIndex);
+            // Blit(cmd, this.thicknessHorizontalHandle, this.thicknessHandle);
 
             if (this.settings.depth)
             {
-                Blit(cmd, depthHandle, colorTarget);
+                Blit(cmd, this.depthVerticalHandle, colorTarget);
             }
             else if (this.settings.blur)
-                Blit(cmd, thicknessHandle, colorTarget);
+                Blit(cmd, this.thicknessVerticalHandle, colorTarget);
             else
             {
                 // render
@@ -260,9 +278,11 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
             RTHandle[] handles = {
                 depthHandle,
-                depthHalfResHandle,
+                depthHorizontalHandle,
+                depthVerticalHandle,
                 thicknessHandle,
-                thicknessHalfResHandle
+                thicknessHorizontalHandle,
+                thicknessVerticalHandle
             };
             foreach (var handle in handles)
             {

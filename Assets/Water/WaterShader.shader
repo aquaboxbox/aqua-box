@@ -90,8 +90,7 @@ Shader "Custom/WaterShader"
 
         }
 
-        // bilateral blur
-        // depth blur
+        // bilateral H
         Pass {
             ZWrite On
             ZTest Off
@@ -130,21 +129,17 @@ Shader "Custom/WaterShader"
 
                 float sum = 0.0;
                 float weightSum = 0.0;
-                //[loop]
                 for (int i = -kernelSize; i <= kernelSize; i++) {
-                    //[loop]
-                    for (int j = -kernelSize; j <= kernelSize; j++) {
-                        float2 sampleUv = uv + float2(i,j) * texelSize;
-
+                        float2 sampleUv = uv + float2(i,0) * texelSize;
                         float sampleDepth = tex2D(_DepthTexture, sampleUv).r;
-                        float spatial = gaussian1(length(float2(i,j)), _DistanceSigma);
+
+                        float spatial = gaussian1(length(float2(i,0)), _DistanceSigma);
                         float intensity = gaussian1(abs(depth - sampleDepth), _IntensitySigma);
+
                         float weight = spatial * intensity;
-                        //float weight = gaussian2(i, j, _DistanceSigma);// * gaussian1(abs(depth - sampleDepth), _IntensitySigma);
 
                         sum += sampleDepth * weight;
                         weightSum += weight;
-                    }
                 }
                 sum /= weightSum;
 
@@ -152,8 +147,66 @@ Shader "Custom/WaterShader"
             }
             ENDHLSL
         }
-        // gaussian blur
-        // color
+
+        // bilateral V
+        Pass {
+            ZWrite On
+            ZTest Off
+
+            HLSLPROGRAM
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+
+            #pragma vertex Vert     // take vert from blit package
+            #pragma fragment frag
+
+            sampler2D _DepthHorizontalTexture;
+            int _BlurRadius;
+            float _IntensitySigma;
+            float _DistanceSigma;
+
+            // x: distance from x0
+            float gaussian1(float x, float sigma) {
+                return exp(-(x * x) / (2.0 * sigma * sigma));
+            }
+
+            // x: distance from x0
+            // y: distance from y0
+            float gaussian2(float x, float y, float sigma) {
+                return exp(-(x * x + y * y) / (2.0 * sigma * sigma));
+            }
+
+            float frag(Varyings input) : SV_Depth
+            {
+                float2 uv = input.texcoord.xy;
+                float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
+                float depth = tex2D(_DepthHorizontalTexture, uv).r;
+                //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
+                int kernelSize = _BlurRadius;
+
+                float sum = 0.0;
+                float weightSum = 0.0;
+                for (int i = -kernelSize; i <= kernelSize; i++) {
+                        float2 sampleUv = uv + float2(0,i) * texelSize;
+                        float sampleDepth = tex2D(_DepthHorizontalTexture, sampleUv).r;
+
+                        float spatial = gaussian1(length(float2(0,i)), _DistanceSigma);
+                        float intensity = gaussian1(abs(depth - sampleDepth), _IntensitySigma);
+
+                        float weight = spatial * intensity;
+
+                        sum += sampleDepth * weight;
+                        weightSum += weight;
+                }
+                sum /= weightSum;
+
+                return sum;
+            }
+            ENDHLSL
+        }
+
+        // gaussian H
         Pass {
             ZWrite Off
             ZTest Off
@@ -166,6 +219,7 @@ Shader "Custom/WaterShader"
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
 
+            sampler2D _ThicknessTexture;
             int _ThicknessBlurRadius;
             float _ThicknessSigma;
 
@@ -178,21 +232,19 @@ Shader "Custom/WaterShader"
             {
                 float2 uv = input.texcoord.xy;
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
-                float4 color = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_PointClamp, uv, _BlitMipLevel);
+                float4 color = tex2D(_ThicknessTexture, uv);
                 int kernelSize = _ThicknessBlurRadius;
 
                 float4 sum = float4(0,0,0,0);
                 float weightSum = 0.0;
                 for (int i = -kernelSize; i <= kernelSize; i++) {
-                    for (int j = -kernelSize; j <= kernelSize; j++) {
-                        float2 sampleUv = uv + float2(i,j) * texelSize;
+                    float2 sampleUv = uv + float2(i,0) * texelSize;
 
-                        float4 sampleColor = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_PointClamp, sampleUv, _BlitMipLevel);
-                        float weight = gaussian1(length(float2(i,j)), _ThicknessSigma);
+                    float4 sampleColor = tex2D(_ThicknessTexture, sampleUv);
+                    float weight = gaussian1(length(float2(i,0)), _ThicknessSigma);
 
-                        sum += sampleColor * weight;
-                        weightSum += weight;
-                    }
+                    sum += sampleColor * weight;
+                    weightSum += weight;
                 }
                 sum /= weightSum;
 
@@ -200,6 +252,53 @@ Shader "Custom/WaterShader"
             }
             ENDHLSL
         }
+        // gaussian V
+        Pass {
+            ZWrite Off
+            ZTest Off
+
+            HLSLPROGRAM
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+
+            #pragma vertex Vert     // take vert from blit package
+            #pragma fragment frag
+
+            sampler2D _ThicknessHorizontalTexture;
+            int _ThicknessBlurRadius;
+            float _ThicknessSigma;
+
+            // x: distance from x0
+            float gaussian1(float x, float sigma) {
+                return exp(-(x * x) / (2.0 * sigma * sigma));
+            }
+
+            float4 frag(Varyings input) : SV_Target
+            {
+                float2 uv = input.texcoord.xy;
+                float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
+                float4 color = tex2D(_ThicknessHorizontalTexture, uv);
+                int kernelSize = _ThicknessBlurRadius;
+
+                float4 sum = float4(0,0,0,0);
+                float weightSum = 0.0;
+                for (int i = -kernelSize; i <= kernelSize; i++) {
+                    float2 sampleUv = uv + float2(0,i) * texelSize;
+
+                    float4 sampleColor = tex2D(_ThicknessHorizontalTexture, sampleUv);
+                    float weight = gaussian1(length(float2(0,i)), _ThicknessSigma);
+
+                    sum += sampleColor * weight;
+                    weightSum += weight;
+                }
+                sum /= weightSum;
+
+                return sum;
+            }
+            ENDHLSL
+        }
+
         // render
         Pass {
             ZWrite off
@@ -211,9 +310,9 @@ Shader "Custom/WaterShader"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
             sampler2D _CameraDepthTexture;
-            sampler2D _DepthTexture;
-            sampler2D _ThicknessTexture;
-            sampler2D _SceneDepthTexture;
+            sampler2D _DepthVerticalTexture;
+            sampler2D _ThicknessVerticalTexture;
+            //sampler2D _SceneDepthTexture;
 
             float4x4 _InverseView;
             float4x4 _InverseProjection;
@@ -256,11 +355,11 @@ Shader "Custom/WaterShader"
 
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 // https://wickedengine.net/2019/09/improved-normal-reconstruction-from-depth/
-                float centerDepth = tex2D(_DepthTexture, uv + float2(0, 0) * texelSize).r;
-                float leftDepth   = tex2D(_DepthTexture, uv + float2(-1,0) * texelSize).r;
-                float rightDepth  = tex2D(_DepthTexture, uv + float2(1, 0) * texelSize).r;
-                float topDepth    = tex2D(_DepthTexture, uv + float2(0,-1) * texelSize).r;
-                float bottomDepth = tex2D(_DepthTexture, uv + float2(0, 1) * texelSize).r;
+                float centerDepth = tex2D(_DepthVerticalTexture, uv + float2(0, 0) * texelSize).r;
+                float leftDepth   = tex2D(_DepthVerticalTexture, uv + float2(-1,0) * texelSize).r;
+                float rightDepth  = tex2D(_DepthVerticalTexture, uv + float2(1, 0) * texelSize).r;
+                float topDepth    = tex2D(_DepthVerticalTexture, uv + float2(0,-1) * texelSize).r;
+                float bottomDepth = tex2D(_DepthVerticalTexture, uv + float2(0, 1) * texelSize).r;
 
                 float3 centerPos = reconstructPosition(uv + float2(0, 0) * texelSize, centerDepth);
                 float3 leftPos   = reconstructPosition(uv + float2(-1,0) * texelSize, leftDepth);
@@ -294,7 +393,7 @@ Shader "Custom/WaterShader"
                 float diffuse  = 0.8 * saturate(dot(lightDir, normal));
                 float specular = 0.5 * pow(saturate(dot(halfDir, normal)), _SpecularHighlight);
 
-                float thickness = tex2D(_ThicknessTexture, uv).r;
+                float thickness = tex2D(_ThicknessVerticalTexture, uv).r;
 
                 float3 fluidColor = float3(0.0, 0.4, 0.6);
                 float3 refractedColor = lerp(fluidColor, sceneColor.xyz, exp(-thickness));
@@ -307,43 +406,46 @@ Shader "Custom/WaterShader"
                 float3 color = sceneColor;
                 color = col;
 
-                // manual depth test
+                // depth test
                 float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
                 float fluidDepth = centerDepth;
+                float d = max(sceneDepth, fluidDepth);
+                //return float4(d,d,d,1);
                 if (sceneDepth > fluidDepth) {
                     return sceneColor;
                 }
 
                 return float4(color, 1);
-                return float4(normal, 1);
                 return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
+                return float4(normal, 1);
                 return float4(centerPos, 1);
                 return float4(centerDepth, centerDepth, centerDepth, 1);
             }
             ENDHLSL
         }
-        // depth blit
-        Pass {
-            ZWrite On
-            ZTest Off
+        //// depth blit
+        //Pass {
+        //    ZWrite On
+        //    ZTest Off
 
-            HLSLPROGRAM
+        //    HLSLPROGRAM
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-            
-            sampler2D _CameraDepthTexture;
-            sampler2D _HalfResDepthTexture;
+        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+        //    
+        //    sampler2D _CameraDepthTexture;
+        //    sampler2D _DepthHorizontalTexture;
+        //    sampler2D _DepthVerticalTexture;
 
-            #pragma vertex Vert
-            #pragma fragment frag
+        //    #pragma vertex Vert
+        //    #pragma fragment frag
 
-            float frag(Varyings input) : SV_Depth
-            {
-                return tex2D(_HalfResDepthTexture, input.texcoord).r;
-            }
-            ENDHLSL
-        }
+        //    float frag(Varyings input) : SV_Depth
+        //    {
+        //        return tex2D(_DepthHorizontalTexture, input.texcoord).r;
+        //    }
+        //    ENDHLSL
+        //}
 
         //// clear depth
         //Pass {
@@ -474,3 +576,65 @@ Shader "Custom/WaterShader"
         //}
     }
 }
+        // bilateral blur
+        // depth blur
+        //Pass {
+        //    ZWrite On
+        //    ZTest Off
+
+        //    HLSLPROGRAM
+
+        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+
+        //    #pragma vertex Vert     // take vert from blit package
+        //    #pragma fragment frag
+
+        //    sampler2D _DepthTexture;
+        //    int _BlurRadius;
+        //    float _IntensitySigma;
+        //    float _DistanceSigma;
+
+        //    // x: distance from x0
+        //    float gaussian1(float x, float sigma) {
+        //        return exp(-(x * x) / (2.0 * sigma * sigma));
+        //    }
+
+        //    // x: distance from x0
+        //    // y: distance from y0
+        //    float gaussian2(float x, float y, float sigma) {
+        //        return exp(-(x * x + y * y) / (2.0 * sigma * sigma));
+        //    }
+
+        //    float frag(Varyings input) : SV_Depth
+        //    {
+        //        float2 uv = input.texcoord.xy;
+        //        float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
+        //        float depth = tex2D(_DepthTexture, uv).r;
+        //        //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
+        //        int kernelSize = _BlurRadius;
+
+        //        float sum = 0.0;
+        //        float weightSum = 0.0;
+        //        //[loop]
+        //        for (int i = -kernelSize; i <= kernelSize; i++) {
+        //            //[loop]
+        //            for (int j = -kernelSize; j <= kernelSize; j++) {
+        //                float2 sampleUv = uv + float2(i,j) * texelSize;
+
+        //                float sampleDepth = tex2D(_DepthTexture, sampleUv).r;
+        //                float spatial = gaussian1(length(float2(i,j)), _DistanceSigma);
+        //                float intensity = gaussian1(abs(depth - sampleDepth), _IntensitySigma);
+        //                float weight = spatial * intensity;
+        //                //float weight = gaussian2(i, j, _DistanceSigma);// * gaussian1(abs(depth - sampleDepth), _IntensitySigma);
+
+        //                sum += sampleDepth * weight;
+        //                weightSum += weight;
+        //            }
+        //        }
+        //        sum /= weightSum;
+
+        //        return sum;
+        //    }
+        //    ENDHLSL
+        //}
