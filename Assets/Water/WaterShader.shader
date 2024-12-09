@@ -291,6 +291,7 @@ Shader "Custom/WaterShader"
             float _SpecularHighlight;
             float _RefractionCoefficient;
             float4 _FluidColor;
+            float _Absorption;
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
@@ -371,7 +372,7 @@ Shader "Custom/WaterShader"
 
                 // TODO: modify rgb channels with thickness differently instead of hardcoding color
                 float3 fluidColor = _FluidColor.rgb;
-                float3 refractedColor = lerp(fluidColor, refractedSceneColor.xyz, exp(-thickness));
+                float3 refractedColor = lerp(fluidColor, refractedSceneColor.xyz, exp(-thickness * _Absorption));
                 float3 color = refractedColor + specular;
 
                 //float fresnelFactor = fresnel(dot(normal, viewDir), 15.0);

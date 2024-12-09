@@ -39,6 +39,8 @@ public class WaterRenderFeature : ScriptableRendererFeature
         public float refractionCoefficient = 0.01f;
         public Vector3 lightPos = new Vector3(0, 0, 0);
         public Color fluidColor = new Color(0f, 0.4f, 0.6f);
+        [Range(0f, 10f)]
+        public float absorption = 1f;
 
         [Header("Sphere")]
         public Mesh mesh;
@@ -124,6 +126,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
             material.SetFloat("_SpecularHighlight", this.settings.specularHighlight);
             material.SetFloat("_RefractionCoefficient", this.settings.refractionCoefficient);
             material.SetVector("_FluidColor", this.settings.fluidColor);
+            material.SetFloat("_Absorption", this.settings.absorption);
 
         }
 
@@ -293,7 +296,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
             UnityEngine.Object.Destroy(material);
 #endif
 
-            this.positionBuffer.Release();
+            //this.positionBuffer.Release();
 
             RTHandle[] handles = {
                 depthHandle,
