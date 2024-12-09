@@ -385,13 +385,17 @@ Shader "Custom/WaterShader"
                 // TODO: can probably move this before lighting calculations to save computations
                 float fluidDepth = centerDepth;
                 float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
+                if (fluidDepth <= 0.001 && sceneDepth <= 0.001) {
+                    return baseSceneColor;
+                }
                 if (sceneDepth > fluidDepth) {
                     return baseSceneColor;
                 }
-
                 return float4(color, 1);
+                 return float4(normal, 1);
+
                 //return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
-                //return float4(normal, 1);
+               
                 //return float4(centerPos, 1);
                 //return float4(centerDepth, centerDepth, centerDepth, 1);
             }
