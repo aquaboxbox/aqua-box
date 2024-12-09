@@ -39,7 +39,6 @@ VertexOutput BillboardVert(VertexInput vIn, uint instanceID : SV_InstanceID)
     float3 u = normalize(cross(v, cameraDir));
 
     float3 worldPos = center;
-    //worldPos = center;
     int id = vIn.id;
     if (id == 0) {
         worldPos -= u * _Radius;

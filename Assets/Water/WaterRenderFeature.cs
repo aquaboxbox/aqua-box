@@ -38,6 +38,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
         [Range(0f, 0.1f)]
         public float refractionCoefficient = 0.01f;
         public Vector3 lightPos = new Vector3(0, 0, 0);
+        public Color fluidColor = new Color(0f, 0.4f, 0.6f);
 
         [Header("Sphere")]
         public Mesh mesh;
@@ -122,6 +123,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
             material.SetVector("_LightPos", this.settings.lightPos);
             material.SetFloat("_SpecularHighlight", this.settings.specularHighlight);
             material.SetFloat("_RefractionCoefficient", this.settings.refractionCoefficient);
+            material.SetVector("_FluidColor", this.settings.fluidColor);
 
         }
 
@@ -156,7 +158,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             this.material.enableInstancing = true;
-            // renderingData.cameraData.requiresDepthTexture = true;
 
             this.material.SetTexture("_DepthTexture", this.depthHandle);
             this.material.SetTexture("_DepthHorizontalTexture", this.depthHorizontalHandle);
@@ -168,6 +169,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
             this.material.SetTexture("_ColorTexture", this.colorHandle);
 
+            // will come from simulation
             this.material.SetBuffer("_PositionBuffer", this.positionBuffer);
 
             Camera cam = renderingData.cameraData.camera;
@@ -192,19 +194,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
                 cmd.SetRenderTarget(handle);
                 cmd.ClearRenderTarget(true, true, Color.clear);
             }
-            // cmd.SetRenderTarget(depthHandle);
-            // cmd.ClearRenderTarget(true, false, Color.clear);
-            // cmd.SetRenderTarget(depthHorizontalHandle);
-            // cmd.ClearRenderTarget(true, false, Color.clear);
-            // cmd.SetRenderTarget(depthVerticalHandle);
-            //
-            // cmd.ClearRenderTarget(true, false, Color.clear);
-            // cmd.SetRenderTarget(thicknessHandle);
-            // cmd.ClearRenderTarget(false, true, Color.clear);
-            // cmd.SetRenderTarget(thicknessHorizontalHandle);
-            // cmd.ClearRenderTarget(false, true, Color.clear);
-            // cmd.SetRenderTarget(thicknessVerticalHandle);
-            // cmd.ClearRenderTarget(false, true, Color.clear);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -216,8 +205,8 @@ public class WaterRenderFeature : ScriptableRendererFeature
             Camera camera = renderingData.cameraData.camera;
             RTHandle colorTarget = renderingData.cameraData.renderer.cameraColorTargetHandle;
             RTHandle depthTarget = renderingData.cameraData.renderer.cameraDepthTargetHandle;
-            // TODO: need to combine with camera depth
 
+            // indices to render passes in shader
             int depthIndex = 0;
             int thicknessIndex = 1;
             int depthBlurHorizontalIndex = 2;
@@ -242,6 +231,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
             Blit(cmd, this.thicknessHorizontalHandle, this.thicknessHorizontalHandle, this.material, thicknessBlurHorizontalIndex);
             Blit(cmd, this.thicknessVerticalHandle, this.thicknessVerticalHandle, this.material, thicknessBlurVerticalIndex);
 
+            // debug render
             if (this.settings.depth)
             {
                 Blit(cmd, this.depthVerticalHandle, colorTarget);
@@ -250,8 +240,10 @@ public class WaterRenderFeature : ScriptableRendererFeature
                 Blit(cmd, this.thicknessVerticalHandle, colorTarget);
             else
             {
-                // render
+                // actual water render
+                // copy color to render target
                 Blit(cmd, colorTarget, colorHandle);
+                // set _BlitTexture and _CameraDepthTexture
                 cmd.SetRenderTarget(colorTarget, depthTarget);
                 Blit(cmd, colorTarget, colorTarget, this.material, renderIndex);
             }
@@ -264,6 +256,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
         {
             List<Vector4> centers = new();
 
+            // kinda whack but hacked something togetehr quickly
             PBDFluid.FluidSetup fluidSimulation = FindObjectOfType<PBDFluid.FluidSetup>();
             if (fluidSimulation.m_fluid != null)
             {

@@ -74,8 +74,6 @@ Shader "Custom/WaterShader"
                 float2 normUv = vIn.uv * 2.0 - 1.0;
                 float dist = length(normUv);
 
-                // SET BLEND MODE IN TAGS
-
                 bool inMask = dist >= 1.0;
                 if (inMask) {
                     discard;
@@ -114,9 +112,8 @@ Shader "Custom/WaterShader"
                 float2 uv = input.texcoord.xy;
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 float depth = tex2D(_DepthTexture, uv).r;
-
-                //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
                 int kernelSize = _BlurRadius;
+                // TODO: dynamically set kernelsize with depth
 
                 float sum = 0.0;
                 float weightSum = 0.0;
@@ -163,8 +160,8 @@ Shader "Custom/WaterShader"
                 float2 uv = input.texcoord.xy;
                 float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 float depth = tex2D(_DepthHorizontalTexture, uv).r;
-                //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
                 int kernelSize = _BlurRadius;
+                // TODO: dynamically set kernelsize with depth
 
                 float sum = 0.0;
                 float weightSum = 0.0;
@@ -293,19 +290,14 @@ Shader "Custom/WaterShader"
             float3 _LightPos;
             float _SpecularHighlight;
             float _RefractionCoefficient;
+            float4 _FluidColor;
 
             #pragma vertex Vert     // take vert from blit package
             #pragma fragment frag
 
-            float4 blend(float4 sceneColor, float4 color, float alpha) 
+            float fresnel(float cosTheta, float p)
             {
-                return (1 - alpha) * sceneColor + alpha * color;
-            }
-
-            float fresnel(float cosTheta)
-            {
-                return pow(saturate(1.0 - cosTheta), 15.0);
-                return pow(saturate(1.0 - cosTheta), 5.0);
+                return pow(saturate(1.0 - cosTheta), p);
             }
 
             float3 reconstructPosition(float2 uv, float depth)
@@ -326,8 +318,10 @@ Shader "Custom/WaterShader"
             {
                 float2 uv = input.texcoord;
 
-                float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
+                // generate normal from depth
                 // https://wickedengine.net/2019/09/improved-normal-reconstruction-from-depth/
+
+                float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
                 float centerDepth = tex2D(_DepthVerticalTexture, uv + float2(0, 0) * texelSize).r;
                 float leftDepth   = tex2D(_DepthVerticalTexture, uv + float2(-1,0) * texelSize).r;
                 float rightDepth  = tex2D(_DepthVerticalTexture, uv + float2(1, 0) * texelSize).r;
@@ -353,15 +347,18 @@ Shader "Custom/WaterShader"
 
                 float3 normal = normalize(cross(P2 - P0, P1 - P0));
 
+                // simple specular reflections
+                
                 float3 lightPos = _LightPos;
                 float3 lightDir = normalize(lightPos - centerPos);
                 float3 viewDir = normalize(_WorldSpaceCameraPos - centerPos);
                 float3 halfDir = normalize(lightDir + viewDir);
+                float specular = 0.5 * pow(saturate(dot(halfDir, normal)), _SpecularHighlight);
 
                 //float ambient  = 0.1;
                 //float diffuse  = 0.8 * saturate(dot(lightDir, normal));
-                float specular = 0.5 * pow(saturate(dot(halfDir, normal)), _SpecularHighlight);
 
+                // beers law + refraction
                 float thickness = tex2D(_ThicknessVerticalTexture, uv).r;
                 float4 baseSceneColor = tex2D(_ColorTexture, uv);
                 float2 refractedUv = uv + normal.xy * thickness * _RefractionCoefficient;
@@ -372,250 +369,32 @@ Shader "Custom/WaterShader"
                     refractedSceneColor = baseSceneColor;
                 }
 
-                //float4 sceneColor = tex2D(_BlitTexture)
-                float3 fluidColor = float3(0.0, 0.4, 0.6); // TODO: modify rgb channels with thickness differently instead
+                // TODO: modify rgb channels with thickness differently instead of hardcoding color
+                float3 fluidColor = _FluidColor.rgb;
                 float3 refractedColor = lerp(fluidColor, refractedSceneColor.xyz, exp(-thickness));
-                float3 reflectedColor = float3(1,1,1);
-                float fresnelFactor = fresnel(dot(normal, viewDir));
-                //float3 color = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
                 float3 color = refractedColor + specular;
+
+                //float fresnelFactor = fresnel(dot(normal, viewDir), 15.0);
+                //float3 reflectedColor = float3(1,1,1);
+                //float fresnelFactor = fresnel(dot(normal, viewDir), 5.0);
+                //float3 color = refractedColor * (1.0 - fresnel(dot(normal, viewDir))) + reflectedColor * fresnel(dot(normal, viewDir)) + specular;
                 //float3 color = diffuse * float3(1,1,1);
 
-                // depth test
+                // manual depth test
+                // TODO: can probably move this before lighting calculations to save computations
                 float fluidDepth = centerDepth;
                 float sceneDepth = tex2D(_CameraDepthTexture, uv).r;
-                float d = max(sceneDepth, fluidDepth);
-                //return float4(d,d,d,1);
-                //if (length(sceneDepth - fluidDepth) <= 0.0001) {
-                //    return float4(1,0,0,1);
-                //}
-                if (refractedDepth < fluidDepth) {
-                    //return float4(1,0,0,1);
-                }
                 if (sceneDepth > fluidDepth) {
                     return baseSceneColor;
                 }
 
                 return float4(color, 1);
-                return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
-                return float4(normal, 1);
-                return float4(centerPos, 1);
-                return float4(centerDepth, centerDepth, centerDepth, 1);
+                //return float4(fresnelFactor, fresnelFactor, fresnelFactor, 1);
+                //return float4(normal, 1);
+                //return float4(centerPos, 1);
+                //return float4(centerDepth, centerDepth, centerDepth, 1);
             }
             ENDHLSL
         }
-        //// depth blit
-        //Pass {
-        //    ZWrite On
-        //    ZTest Off
-
-        //    HLSLPROGRAM
-
-        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-        //    
-        //    sampler2D _CameraDepthTexture;
-        //    sampler2D _DepthHorizontalTexture;
-        //    sampler2D _DepthVerticalTexture;
-
-        //    #pragma vertex Vert
-        //    #pragma fragment frag
-
-        //    float frag(Varyings input) : SV_Depth
-        //    {
-        //        return tex2D(_DepthHorizontalTexture, input.texcoord).r;
-        //    }
-        //    ENDHLSL
-        //}
-
-        //// clear depth
-        //Pass {
-        //    ZWrite On 
-        //    ZTest Off
-
-        //    HLSLPROGRAM
-
-        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-        //    
-        //    #pragma vertex Vert
-        //    #pragma fragment frag
-
-        //    float frag(Varyings input) : SV_Depth
-        //    {
-        //        return 0.0;
-        //    }
-        //    ENDHLSL
-        //}
-        //// clear color
-        //Pass {
-        //    ZWrite Off
-        //    ZTest Off
-
-        //    HLSLPROGRAM
-
-        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-        //    
-        //    #pragma vertex Vert
-        //    #pragma fragment frag
-
-        //    float4 frag(Varyings input) : SV_Target
-        //    {
-        //        return float4(0.0, 0.0, 0.0, 1.0);
-        //    }
-        //    ENDHLSL
-        //}
-        // color blit
-       // Pass {
-       //     ZWrite Off
-       //     ZTest Off
-
-       //     HLSLPROGRAM
-
-       //     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-       //     #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-       //     
-       //     sampler2D _CameraDepthTexture;
-       //     sampler2D _TempDepthTexture;
-
-       //     #pragma vertex Vert
-       //     #pragma fragment frag
-
-       //     float frag(Varyings input) : SV_Target
-       //     {
-       //         float4 sceneColor = FragBilinear(input);
-       //         //return sceneColor;
-       //         float d1 = tex2D(_CameraDepthTexture, input.texcoord).r;
-       //         float d2 = tex2D(_TempDepthTexture, input.texcoord).r;
-       //         float d = max(d1, d2);
-
-       //         return d;
-       //     }
-       //     ENDHLSL
-       // }
-
-       // //// horizontal blur
-        //Pass {
-        //    ZWrite On
-
-        //    HLSLPROGRAM
-
-        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-
-        //    #pragma vertex Vert     // take vert from blit package
-        //    #pragma fragment frag
-
-        //    sampler2D _CameraDepthTexture;
-        //    int _BlurRadius;
-
-        //    float frag(Varyings input) : SV_Depth
-        //    {
-        //        float2 uv = input.texcoord.xy;
-        //        float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
-
-        //        float depth = 0.0;
-        //        for (int i = -_BlurRadius; i <= _BlurRadius; i++) {
-        //            depth += tex2D(_CameraDepthTexture, uv + float2(i, 0) * texelSize).r;
-        //        }
-        //        depth /= (_BlurRadius * 2 + 1);
-
-        //        return depth;
-        //    }
-        //    ENDHLSL
-        //}
-        //// vertical blur
-        //Pass {
-        //    ZWrite On
-
-        //    HLSLPROGRAM
-
-        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-
-        //    #pragma vertex Vert     // take vert from blit package
-        //    #pragma fragment frag
-
-        //    sampler2D _CameraDepthTexture;
-        //    int _BlurRadius;
-
-        //    float frag(Varyings input) : SV_Depth
-        //    {
-        //        float2 uv = input.texcoord.xy;
-        //        float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
-
-        //        float depth = 0.0;
-        //        for (int i = -_BlurRadius; i <= _BlurRadius; i++) {
-        //            depth += tex2D(_CameraDepthTexture, uv + float2(0, i) * texelSize).r;
-        //        }
-        //        depth /= (_BlurRadius * 2 + 1);
-
-        //        return depth;
-        //    }
-        //    ENDHLSL
-        //}
     }
 }
-        // bilateral blur
-        // depth blur
-        //Pass {
-        //    ZWrite On
-        //    ZTest Off
-
-        //    HLSLPROGRAM
-
-        //    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        //    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-
-        //    #pragma vertex Vert     // take vert from blit package
-        //    #pragma fragment frag
-
-        //    sampler2D _DepthTexture;
-        //    int _BlurRadius;
-        //    float _IntensitySigma;
-        //    float _DistanceSigma;
-
-        //    // x: distance from x0
-        //    float gaussian1(float x, float sigma) {
-        //        return exp(-(x * x) / (2.0 * sigma * sigma));
-        //    }
-
-        //    // x: distance from x0
-        //    // y: distance from y0
-        //    float gaussian2(float x, float y, float sigma) {
-        //        return exp(-(x * x + y * y) / (2.0 * sigma * sigma));
-        //    }
-
-        //    float frag(Varyings input) : SV_Depth
-        //    {
-        //        float2 uv = input.texcoord.xy;
-        //        float2 texelSize = 1.0 / float2(_ScreenParams.x, _ScreenParams.y);
-        //        float depth = tex2D(_DepthTexture, uv).r;
-        //        //int kernelSize = (int)((float)_BlurRadius * (1.0 - depth));
-        //        int kernelSize = _BlurRadius;
-
-        //        float sum = 0.0;
-        //        float weightSum = 0.0;
-        //        //[loop]
-        //        for (int i = -kernelSize; i <= kernelSize; i++) {
-        //            //[loop]
-        //            for (int j = -kernelSize; j <= kernelSize; j++) {
-        //                float2 sampleUv = uv + float2(i,j) * texelSize;
-
-        //                float sampleDepth = tex2D(_DepthTexture, sampleUv).r;
-        //                float spatial = gaussian1(length(float2(i,j)), _DistanceSigma);
-        //                float intensity = gaussian1(abs(depth - sampleDepth), _IntensitySigma);
-        //                float weight = spatial * intensity;
-        //                //float weight = gaussian2(i, j, _DistanceSigma);// * gaussian1(abs(depth - sampleDepth), _IntensitySigma);
-
-        //                sum += sampleDepth * weight;
-        //                weightSum += weight;
-        //            }
-        //        }
-        //        sum /= weightSum;
-
-        //        return sum;
-        //    }
-        //    ENDHLSL
-        //}
