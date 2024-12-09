@@ -28,6 +28,7 @@ public class Maze : MonoBehaviour {
     // Target for material to render around
     [SerializeField] public Transform target;
     [SerializeField] public float radius = 1.0f;
+    [SerializeField] public float dithering = 0.1f;
 
     // Component References
     private MeshFilter meshFilter;
@@ -43,11 +44,6 @@ public class Maze : MonoBehaviour {
         // Define the maze cells
         DefineMazeCells(gridDimensions);
 
-        // Pick a random starting node
-        Vector3 start = unvisited[Random.Range(0, unvisited.Count)];
-        visited.Add(start);
-        unvisited.Remove(start);
-
         // Generate the maze
         GenerateMaze();
 
@@ -60,22 +56,29 @@ public class Maze : MonoBehaviour {
     void Update() {
         meshRenderer.material.SetVector("_ProxyTarget", target.position);
         meshRenderer.material.SetFloat("_ProxyRadius", radius);
+        meshRenderer.material.SetFloat("_Dithering", dithering);
     }
 
     // Generates a maze mesh using Wilson's algorithm on defined cells in a grid
     // OBS: Causes an infinite loop sometimes, idk don't ask
     public void GenerateMaze(int maxWalks = 100) {
+        
+        // Pick a random starting node
+        Vector3 start = unvisited[Random.Range(0, unvisited.Count)];
+        visited.Add(start);
+        unvisited.Remove(start);
 
         // Generate the maze using wilson's algorithm
         while (unvisited.Count > 0 && maxWalks-- > 0) {
 
-            // Add the path to the maze if it reaches a visited node
+            // Add the path to the maze if it reached a visited node
             Stack<Vector3> path = RandomWalk(100);
             if (path.Count > 0 && visited.Contains(path.Peek())) {
                 Vector3 current = path.Pop();
                 while (path.Count > 0) {
                     Vector3 next = path.Pop();
                     connections[current].Add(next);
+                    connections[next].Add(current);
                     visited.Add(next);
                     unvisited.Remove(next);
                     current = next;
@@ -118,11 +121,13 @@ public class Maze : MonoBehaviour {
             // Count valid directions
             List<Vector3> validDirections = new List<Vector3>();
             foreach (Vector3 direction in directions) {
-                Vector3 nextNode = current + direction;
-                if (nextNode != -lastDirection && (unvisited.Contains(nextNode) || visited.Contains(nextNode))) {
+                if (direction != -lastDirection && connections.ContainsKey(current + direction)) {
                     validDirections.Add(direction);
                 }
             }
+
+            // Dead end, return an empty stack
+            if (validDirections.Count == 0) { return new Stack<Vector3>(); }
             
             // Pick a random direction, if next node creates a loop, remove the loop
             current += validDirections[Random.Range(0, validDirections.Count)];
@@ -169,7 +174,7 @@ public class Maze : MonoBehaviour {
                         Vector3 next = cell + direction;
 
                         // Generate a cube between the cells if there is no connection
-                        if (connections.ContainsKey(cell) && !connections[cell].Contains(next)) {
+                        if (connections.ContainsKey(cell) && !connections[cell].Contains(next) || (!connections.ContainsKey(cell) && connections.ContainsKey(next))) {
                             int vertexIndex = vertices.Count;
 
                             // Skip all outer bound walls

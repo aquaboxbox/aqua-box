@@ -3,6 +3,7 @@ Shader "Unlit/ProxyShader"
     Properties
     {
         _Color("Color", Color) = (1,1,1,1)
+        _Dithering("Dithering", Range(0, 1)) = 0.5
     }
     SubShader
     {
@@ -48,6 +49,7 @@ Shader "Unlit/ProxyShader"
 			float3 _ProxyTarget;
             float _ProxyRadius;
             half4 _Color;
+            float _Dithering;
 
             // Mesh vertex input data
             struct InstancedVertexInput {
@@ -63,6 +65,16 @@ Shader "Unlit/ProxyShader"
                 float4 positionCS : SV_POSITION;
                 float3 normalWS : TEXCOORD2;
             };
+
+            // Outputs a random float between 0 and 1 based on the given seed
+            float rand(uint seed) {
+                seed = (seed ^ 61) ^ (seed >> 16);
+                seed *= 9;
+                seed = seed ^ (seed >> 4);
+                seed *= 0x27d4eb2d;
+                seed = seed ^ (seed >> 15);
+                return ((float)seed) / float(0xffffffff);
+            }
 
             // Vertex shader
             VertexOutput vert(InstancedVertexInput input, uint svInstanceID : SV_InstanceID) {
@@ -97,7 +109,7 @@ Shader "Unlit/ProxyShader"
                 }
 
                 // Screen space dithering
-                float ditheringOpacity = 1 - (pow(1 - saturate(1 - dist / _ProxyRadius), 1.25f));
+                float ditheringOpacity = 1 - (pow(1 - saturate(1 - dist / _ProxyRadius), 1.25f)) * _Dithering;
                 float4 positionCS = TransformWorldToHClip(input.positionWS);
                 if (frac(positionCS.x * _ScreenParams.x) > ditheringOpacity && frac(positionCS.y * _ScreenParams.y) > ditheringOpacity) {
                     discard;

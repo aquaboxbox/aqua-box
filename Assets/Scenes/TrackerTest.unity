@@ -3667,10 +3667,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mazeDimensions: {x: 0.19, y: 0.19, z: 0.19}
-  gridDimensions: {x: 3, y: 3, z: 3}
+  gridDimensions: {x: 5, y: 5, z: 5}
   wallThickness: 0.06
   target: {fileID: 789879471}
   radius: 0.1
+  dithering: 0
 --- !u!23 &1667410901
 MeshRenderer:
   m_ObjectHideFlags: 0
