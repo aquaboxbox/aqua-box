@@ -1,21 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-7764187387050565365
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d69a19d29ef66464ea0afc7cd84fd6c2, type: 3}
-  m_Name: VolumetricFogRendererFeature
-  m_EditorClassIdentifier: 
-  m_Active: 1
-  downsampleDepthShader: {fileID: 4800000, guid: cffeaeec0396a2c4dad475266cc8dfeb,
-    type: 3}
-  volumetricFogShader: {fileID: 4800000, guid: 08f816187f9af0244a95556ee0cab83f, type: 3}
 --- !u!114 &-1878332245247344467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,8 +53,8 @@ MonoBehaviour:
     hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
   m_RendererFeatures:
   - {fileID: -1878332245247344467}
-  - {fileID: -7764187387050565365}
-  m_RendererFeatureMap: adc0de57c6d2eee50b614839b5104094
+  - {fileID: 7626197409145744186}
+  m_RendererFeatureMap: adc0de57c6d2eee53aeb226723b2d569
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -113,3 +97,38 @@ MonoBehaviour:
   m_CopyDepthMode: 0
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 1
+--- !u!114 &7626197409145744186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 366256e41813c40cdba6749565d863f2, type: 3}
+  m_Name: WaterRenderFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    depthBlurRadius: 4
+    depthDistanceSigma: 5.05
+    depthIntesitySigma: 0.0017
+    depthRounding: 0.003
+    depthBlurResolution: 1
+    thickness: 0.022
+    thicknessBlurRadius: 19
+    thicknessDistanceSigma: 10
+    thicknessBlurResolution: 8
+    specularHighlight: 162.6
+    refractionCoefficient: 0.01
+    lightPos: {x: 10, y: 15, z: 10}
+    fluidColor: {r: 0, g: 0.4, b: 0.6, a: 1}
+    absorption: 8.01
+    mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+    radius: 0.005
+    maxParticles: 1000000
+    blur: 0
+    depth: 0
+    limitFps: 0
+  shader: {fileID: 4800000, guid: cad684b39d68749a8a077d4373ea7feb, type: 3}
