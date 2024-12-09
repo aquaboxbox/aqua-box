@@ -13,8 +13,6 @@ Shader "Unlit/ProxyShader"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
-            Cull Off
-
 			HLSLPROGRAM
 
 			// Signal this shader requires a compute buffer
@@ -98,10 +96,17 @@ Shader "Unlit/ProxyShader"
                     discard;
                 }
 
+                // Screen space dithering
+                float ditheringOpacity = 1 - (pow(1 - saturate(1 - dist / _ProxyRadius), 1.25f));
+                float4 positionCS = TransformWorldToHClip(input.positionWS);
+                if (frac(positionCS.x * _ScreenParams.x) > ditheringOpacity && frac(positionCS.y * _ScreenParams.y) > ditheringOpacity) {
+                    discard;
+                }
+
                 // Gather data for lighting
                 InputData lightingData = (InputData)0;
                 lightingData.positionWS = input.positionWS;
-                lightingData.normalWS = -input.normalWS;
+                lightingData.normalWS = input.normalWS;
                 lightingData.viewDirectionWS = GetWorldSpaceViewDir(lightingData.positionWS);
                 lightingData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
 
@@ -113,7 +118,7 @@ Shader "Unlit/ProxyShader"
                 // Use URP's Blinn-Phong lighting model (Bloom combined with MSAA and HDR causes flickering specular highlights)
                 half4 lighting = UniversalFragmentBlinnPhong(lightingData, surfaceData);
                 half4 ambient = half4(_GlossyEnvironmentColor.xyz * _Color.xyz, _Color.a);
-                return lighting + ambient; 
+                return (lighting + ambient) * opacity;
             }
 
             ENDHLSL
