@@ -102,4 +102,3 @@ public class SunAndMoon : MonoBehaviour
         RenderSettings.sun = sun;
     }
 }
-
