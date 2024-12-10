@@ -258,7 +258,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
             PBDFluid.FluidSetup fluidSimulation = FindObjectOfType<PBDFluid.FluidSetup>();
             if (fluidSimulation.m_fluid != null)
             {
-                Debug.Log(fluidSimulation.GetPositionBuffer().stride);
+                //Debug.Log(fluidSimulation.GetPositionBuffer().stride);
 
                 ComputeBuffer positionBuffer = fluidSimulation.GetPositionBuffer();
 
