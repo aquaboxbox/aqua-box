@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 366256e41813c40cdba6749565d863f2, type: 3}
   m_Name: WaterRenderFeature
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   settings:
     depthBlurRadius: 4
     depthDistanceSigma: 5.05
@@ -143,8 +143,7 @@ MonoBehaviour:
     absorption: 8.01
     mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
     radius: 0.005
-    maxParticles: 1000000
+    maxParticles: 0
     blur: 0
     depth: 0
-    limitFps: 0
   shader: {fileID: 4800000, guid: cad684b39d68749a8a077d4373ea7feb, type: 3}

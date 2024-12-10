@@ -46,12 +46,10 @@ public class WaterRenderFeature : ScriptableRendererFeature
         public Mesh mesh;
         [Range(0, 1)]
         public float radius = 0.5f;
-        public int maxParticles = 10000;
 
         [Header("Debug")]
         public bool blur = false;
         public bool depth = false;
-        public bool limitFps = false;
     }
 
     public class WaterRenderPass : ScriptableRenderPass
@@ -73,9 +71,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
         private RTHandle colorHandle;
 
-        private ComputeBuffer positionBuffer;
         private ComputeBuffer indirectDrawArgsBuffer;
-        private uint[] indirectDrawArgs;
 
         public WaterRenderPass(Material material, WaterRenderSettings settings)
         {
@@ -92,48 +88,70 @@ public class WaterRenderFeature : ScriptableRendererFeature
             this.colorTextureDesc = new RenderTextureDescriptor(Screen.width, Screen.height);
             this.colorTextureDesc.colorFormat = RenderTextureFormat.Default;
 
-            this.positionBuffer = new(this.settings.maxParticles, sizeof(float) * 4);
             this.indirectDrawArgsBuffer = new(1, sizeof(uint) * 5, ComputeBufferType.IndirectArguments);
-            this.indirectDrawArgs = new uint[]{
-                6,
-                (uint)this.settings.maxParticles,
-                0,
-                0,
-                0,
-            };
+            this.renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
         }
 
         private void UpdateSettings()
         {
-            if (material == null)
+            if (this.material == null)
             {
                 Debug.LogWarning("No material set for water render pass");
                 return;
             }
 
             //TODO MISMATCH?
-            material.SetInt("_BlurRadius", this.settings.depthBlurRadius);
-            material.SetFloat("_DepthRounding", this.settings.depthRounding);
-            material.SetFloat("_DistanceSigma", this.settings.depthDistanceSigma);
-            material.SetFloat("_IntensitySigma", this.settings.depthIntesitySigma);
+            this.material.SetInt("_BlurRadius", this.settings.depthBlurRadius);
+            this.material.SetFloat("_DepthRounding", this.settings.depthRounding);
+            this.material.SetFloat("_DistanceSigma", this.settings.depthDistanceSigma);
+            this.material.SetFloat("_IntensitySigma", this.settings.depthIntesitySigma);
 
-            material.SetFloat("_Thickness", this.settings.thickness);
-            material.SetInt("_ThicknessBlurRadius", this.settings.thicknessBlurRadius);
-            material.SetFloat("_ThicknessSigma", this.settings.thicknessDistanceSigma);
+            this.material.SetFloat("_Thickness", this.settings.thickness);
+            this.material.SetInt("_ThicknessBlurRadius", this.settings.thicknessBlurRadius);
+            this.material.SetFloat("_ThicknessSigma", this.settings.thicknessDistanceSigma);
 
 
-            material.SetVector("_LightPos", this.settings.lightPos);
-            material.SetFloat("_SpecularHighlight", this.settings.specularHighlight);
-            material.SetFloat("_RefractionCoefficient", this.settings.refractionCoefficient);
-            material.SetVector("_FluidColor", this.settings.fluidColor);
-            material.SetFloat("_Absorption", this.settings.absorption);
+            this.material.SetVector("_LightPos", this.settings.lightPos);
+            this.material.SetFloat("_SpecularHighlight", this.settings.specularHighlight);
+            this.material.SetFloat("_RefractionCoefficient", this.settings.refractionCoefficient);
+            this.material.SetVector("_FluidColor", this.settings.fluidColor);
+            this.material.SetFloat("_Absorption", this.settings.absorption);
 
+            this.material.SetFloat("_Radius", this.settings.radius);
         }
 
-        // before execute
-        // TODO: think this leaks
-        public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
+        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
+            //
+            // settings
+            //
+            this.material.enableInstancing = true;
+
+            //
+            // uniforms
+            //
+            this.material.SetTexture("_DepthTexture", this.depthHandle);
+            this.material.SetTexture("_DepthHorizontalTexture", this.depthHorizontalHandle);
+            this.material.SetTexture("_DepthVerticalTexture", this.depthVerticalHandle);
+            this.material.SetTexture("_ThicknessTexture", this.thicknessHandle);
+            this.material.SetTexture("_ThicknessHorizontalTexture", this.thicknessHorizontalHandle);
+            this.material.SetTexture("_ThicknessVerticalTexture", this.thicknessVerticalHandle);
+            this.material.SetTexture("_ColorTexture", this.colorHandle);
+            // will come from simulation
+
+            Camera cam = renderingData.cameraData.camera;
+            Matrix4x4 viewMatrix = cam.worldToCameraMatrix;
+            Matrix4x4 projectionMatrix = cam.projectionMatrix;
+            Matrix4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
+            this.material.SetMatrix("_InverseView", viewMatrix.inverse);
+            this.material.SetMatrix("_InverseProjection", projectionMatrix.inverse);
+            this.material.SetMatrix("_InverseViewProjection", viewProjectionMatrix.inverse);
+
+            //
+            // Allocate render textures
+            //
+            RenderTextureDescriptor cameraTextureDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+
             // Full res
             this.depthTextureDesc.width = cameraTextureDescriptor.width;
             this.depthTextureDesc.height = cameraTextureDescriptor.height;
@@ -141,7 +159,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
             this.thicknessTextureDesc.height = cameraTextureDescriptor.height;
             this.colorTextureDesc.width = cameraTextureDescriptor.width;
             this.colorTextureDesc.height = cameraTextureDescriptor.height;
-
             RenderingUtils.ReAllocateIfNeeded(ref depthHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             RenderingUtils.ReAllocateIfNeeded(ref thicknessHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             RenderingUtils.ReAllocateIfNeeded(ref colorHandle, colorTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
@@ -151,52 +168,30 @@ public class WaterRenderFeature : ScriptableRendererFeature
             this.depthTextureDesc.height = cameraTextureDescriptor.height / this.settings.depthBlurResolution;
             this.thicknessTextureDesc.width = cameraTextureDescriptor.width / this.settings.thicknessBlurResolution;
             this.thicknessTextureDesc.height = cameraTextureDescriptor.height / this.settings.thicknessBlurResolution;
-
             RenderingUtils.ReAllocateIfNeeded(ref depthHorizontalHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             RenderingUtils.ReAllocateIfNeeded(ref depthVerticalHandle, depthTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             RenderingUtils.ReAllocateIfNeeded(ref thicknessHorizontalHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
             RenderingUtils.ReAllocateIfNeeded(ref thicknessVerticalHandle, thicknessTextureDesc, FilterMode.Bilinear, TextureWrapMode.Clamp);
-        }
 
-        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
-        {
-            this.material.enableInstancing = true;
+            // 
+            // Clear render targets
+            //
+            cmd.SetRenderTarget(depthHandle);
+            cmd.ClearRenderTarget(true, false, Color.clear);
+            cmd.SetRenderTarget(depthHorizontalHandle);
+            cmd.ClearRenderTarget(true, false, Color.clear);
+            cmd.SetRenderTarget(depthVerticalHandle);
+            cmd.ClearRenderTarget(true, false, Color.clear);
 
-            this.material.SetTexture("_DepthTexture", this.depthHandle);
-            this.material.SetTexture("_DepthHorizontalTexture", this.depthHorizontalHandle);
-            this.material.SetTexture("_DepthVerticalTexture", this.depthVerticalHandle);
+            cmd.SetRenderTarget(thicknessHandle);
+            cmd.ClearRenderTarget(false, true, Color.clear);
+            cmd.SetRenderTarget(thicknessHorizontalHandle);
+            cmd.ClearRenderTarget(false, true, Color.clear);
+            cmd.SetRenderTarget(thicknessVerticalHandle);
+            cmd.ClearRenderTarget(false, true, Color.clear);
 
-            this.material.SetTexture("_ThicknessTexture", this.thicknessHandle);
-            this.material.SetTexture("_ThicknessHorizontalTexture", this.thicknessHorizontalHandle);
-            this.material.SetTexture("_ThicknessVerticalTexture", this.thicknessVerticalHandle);
-
-            this.material.SetTexture("_ColorTexture", this.colorHandle);
-
-            // will come from simulation
-            this.material.SetBuffer("_PositionBuffer", this.positionBuffer);
-
-            Camera cam = renderingData.cameraData.camera;
-            Matrix4x4 viewMatrix = cam.worldToCameraMatrix;
-            Matrix4x4 projectionMatrix = cam.projectionMatrix;
-            Matrix4x4 viewProjectionMatrix = projectionMatrix * viewMatrix;
-            material.SetMatrix("_InverseView", viewMatrix.inverse);
-            material.SetMatrix("_InverseProjection", projectionMatrix.inverse);
-            material.SetMatrix("_InverseViewProjection", viewProjectionMatrix.inverse);
-
-            RTHandle[] handles = {
-                depthHandle,
-                depthHorizontalHandle,
-                depthVerticalHandle,
-                thicknessHandle,
-                thicknessHorizontalHandle,
-                thicknessVerticalHandle,
-                colorHandle,
-            };
-            foreach (var handle in handles)
-            {
-                cmd.SetRenderTarget(handle);
-                cmd.ClearRenderTarget(true, true, Color.clear);
-            }
+            cmd.SetRenderTarget(colorHandle);
+            cmd.ClearRenderTarget(false, true, Color.clear);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -265,13 +260,18 @@ public class WaterRenderFeature : ScriptableRendererFeature
             {
                 Debug.Log(fluidSimulation.GetPositionBuffer().stride);
 
-                this.positionBuffer = fluidSimulation.GetPositionBuffer();
+                ComputeBuffer positionBuffer = fluidSimulation.GetPositionBuffer();
 
-                this.indirectDrawArgs[1] = (uint)fluidSimulation.GetPositionBuffer().count;
-                this.indirectDrawArgsBuffer.SetData(this.indirectDrawArgs);
+                uint[] indirectDrawArgs = new uint[]{
+                    6,
+                    (uint)fluidSimulation.GetPositionBuffer().count,
+                    0,
+                    0,
+                    0,
+                };
+                this.indirectDrawArgsBuffer.SetData(indirectDrawArgs);
 
-                this.material.SetFloat("_Radius", this.settings.radius);
-                //this.material.SetFloat("_Radius", fluidSimulation.radius / 8); // TODO: this does not map correctly, fluidSimulation.radius is probably in world space
+                this.material.SetBuffer("_PositionBuffer", positionBuffer);
                 this.material.SetFloat("_Scale", fluidSimulation.scale);
                 this.material.SetFloat("_Damping", fluidSimulation.damping);
                 this.material.SetVector("_SimulationCenter", fluidSimulation.transform.position);
@@ -283,41 +283,30 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
         public void Dispose()
         {
-#if UNITY_EDITOR
-            if (EditorApplication.isPlaying)
-            {
-                UnityEngine.Object.Destroy(material);
-            }
-            else
-            {
-                UnityEngine.Object.DestroyImmediate(material);
-            }
-#else
-            UnityEngine.Object.Destroy(material);
-#endif
+            this.indirectDrawArgsBuffer?.Release();
+            this.indirectDrawArgsBuffer = null;
 
-            //this.positionBuffer.Release();
+            this.depthHandle?.Release();
+            this.depthHandle = null;
+            this.depthHorizontalHandle?.Release();
+            this.depthHorizontalHandle = null;
+            this.depthVerticalHandle?.Release();
+            this.depthVerticalHandle = null;
 
-            RTHandle[] handles = {
-                depthHandle,
-                depthHorizontalHandle,
-                depthVerticalHandle,
-                thicknessHandle,
-                thicknessHorizontalHandle,
-                thicknessVerticalHandle,
-                colorHandle
+            this.thicknessHandle?.Release();
+            this.thicknessHandle = null;
+            this.thicknessHorizontalHandle?.Release();
+            this.thicknessHorizontalHandle = null;
+            this.thicknessVerticalHandle?.Release();
+            this.thicknessVerticalHandle = null;
 
-            };
-            foreach (var handle in handles)
-            {
-                handle?.Release();
-            }
+            this.colorHandle?.Release();
+            this.colorHandle = null;
         }
     }
 
     [SerializeField] private WaterRenderSettings settings;
     [SerializeField] private Shader shader;
-    // [SerializeField] private PBDFluid.FluidSetup fluidBody;
     private Material material;
     private WaterRenderPass renderPass;
 
@@ -333,17 +322,6 @@ public class WaterRenderFeature : ScriptableRendererFeature
     // init/variable changes
     public override void Create()
     {
-        if (this.settings.limitFps)
-        {
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = 30;
-        }
-        else
-        {
-            QualitySettings.vSyncCount = 1;
-            Application.targetFrameRate = 500;
-        }
-
         if (this.shader == null)
         {
             Debug.LogWarning("Shader not set in water render feature");
@@ -352,25 +330,30 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
         this.material = new Material(this.shader);
         this.renderPass = new WaterRenderPass(this.material, this.settings);
-
-        this.renderPass.renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
     }
 
     protected override void Dispose(bool disposing)
     {
-        this.renderPass.Dispose();
+
+        this.renderPass?.Dispose();
+        this.renderPass = null;
+
+        if (this.material != null)
+        {
 #if UNITY_EDITOR
-        if (EditorApplication.isPlaying)
-        {
-            UnityEngine.Object.Destroy(material);
-        }
-        else
-        {
-            UnityEngine.Object.DestroyImmediate(material);
-        }
+            if (EditorApplication.isPlaying)
+            {
+                UnityEngine.Object.Destroy(material);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(material);
+            }
 #else
             UnityEngine.Object.Destroy(material);
 #endif
+            this.material = null;
+        }
     }
 }
 
