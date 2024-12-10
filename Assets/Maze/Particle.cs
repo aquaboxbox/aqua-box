@@ -6,7 +6,8 @@ public class Particle : MonoBehaviour {
 
     // Component References
     private Rigidbody rb;
-
+    [SerializeField] private Material deadParticle;
+    [SerializeField] private Material aliveParticle;
     // Variables
     private Vector3 lastPosition;
 
@@ -14,11 +15,17 @@ public class Particle : MonoBehaviour {
     void Start() {
         rb = GetComponent<Rigidbody>();
         lastPosition = transform.position;
+        //DisableParticle();
+    }
+
+    void OnEnable()
+    {
+        lastPosition = transform.position;
     }
 
     // Update is called once per frame
     void Update() {
-        
+        if(Input.GetKeyDown(KeyCode.X)) gameObject.SetActive(true); // For debugging
         // Try to move the particle back to the last position
         Vector3 direction = lastPosition - transform.position;
         rb.AddForce(direction * 10.0f * 100f);
@@ -26,4 +33,11 @@ public class Particle : MonoBehaviour {
         // Update the last position
         lastPosition = transform.position;
     }
+
+    private void DisableParticle()
+    {
+        gameObject.SetActive(false);
+    }
+
+    
 }

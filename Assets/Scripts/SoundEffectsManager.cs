@@ -98,4 +98,13 @@ public class SoundEffectsManager : MonoBehaviour
         yield return new WaitForSeconds(duration);
         currentlyPlayingSounds.Remove(name);
     }
+
+    /// <summary>
+    /// Stops all currently playing sounds on this AudioSource.
+    /// </summary>
+    public void StopAllSounds()
+    {
+        audioSource.Stop();
+        currentlyPlayingSounds.Clear(); // Clear the set of currently playing sounds
+    }
 }

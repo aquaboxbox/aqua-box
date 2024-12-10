@@ -26,7 +26,7 @@ public class Maze : MonoBehaviour {
     };
 
     // Target for material to render around
-    [SerializeField] public Transform target;
+    [SerializeField] public GameObject target;
     [SerializeField] public float radius = 1.0f;
     [SerializeField] public float dithering = 0.1f;
 
@@ -54,7 +54,11 @@ public class Maze : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        meshRenderer.material.SetVector("_ProxyTarget", target.position);
+        if(target.activeSelf){
+            meshRenderer.material.SetVector("_ProxyTarget", target.transform.position);
+        }
+        else meshRenderer.material.SetVector("_ProxyTarget", new Vector3(1000, 1000, 1000));
+
         meshRenderer.material.SetFloat("_ProxyRadius", radius);
         meshRenderer.material.SetFloat("_Dithering", dithering);
     }
