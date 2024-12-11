@@ -5,6 +5,8 @@ using UnityEngine;
 public class ObjectControl : MonoBehaviour
 {
     public GameObject particleObject;
+    public GameObject mazeObject;
+    public GameObject waterObject;
 
     private void Awake()
     {
@@ -36,6 +38,8 @@ public class ObjectControl : MonoBehaviour
         if (particleObject != null)
         {
             particleObject.SetActive(true);
+            mazeObject.SetActive(true);
+            waterObject.SetActive(false);
         }
         else
         {
@@ -51,6 +55,8 @@ public class ObjectControl : MonoBehaviour
         if (particleObject != null)
         {
             particleObject.SetActive(false);
+            mazeObject.SetActive(false);
+            waterObject.SetActive(true);
         }
         else
         {

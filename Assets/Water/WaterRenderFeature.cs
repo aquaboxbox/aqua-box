@@ -256,7 +256,7 @@ public class WaterRenderFeature : ScriptableRendererFeature
 
             // kinda whack but hacked something togetehr quickly
             PBDFluid.FluidSetup fluidSimulation = FindObjectOfType<PBDFluid.FluidSetup>();
-            if (fluidSimulation.m_fluid != null)
+            if (fluidSimulation != null && fluidSimulation.m_fluid != null)
             {
                 //Debug.Log(fluidSimulation.GetPositionBuffer().stride);
 
@@ -286,22 +286,22 @@ public class WaterRenderFeature : ScriptableRendererFeature
             this.indirectDrawArgsBuffer?.Release();
             this.indirectDrawArgsBuffer = null;
 
-            this.depthHandle?.Release();
-            this.depthHandle = null;
-            this.depthHorizontalHandle?.Release();
-            this.depthHorizontalHandle = null;
-            this.depthVerticalHandle?.Release();
-            this.depthVerticalHandle = null;
+            // this.depthHandle?.Release();
+            // this.depthHandle = null;
+            // this.depthHorizontalHandle?.Release();
+            // this.depthHorizontalHandle = null;
+            // this.depthVerticalHandle?.Release();
+            // this.depthVerticalHandle = null;
 
-            this.thicknessHandle?.Release();
-            this.thicknessHandle = null;
-            this.thicknessHorizontalHandle?.Release();
-            this.thicknessHorizontalHandle = null;
-            this.thicknessVerticalHandle?.Release();
-            this.thicknessVerticalHandle = null;
+            // this.thicknessHandle?.Release();
+            // this.thicknessHandle = null;
+            // this.thicknessHorizontalHandle?.Release();
+            // this.thicknessHorizontalHandle = null;
+            // this.thicknessVerticalHandle?.Release();
+            // this.thicknessVerticalHandle = null;
 
-            this.colorHandle?.Release();
-            this.colorHandle = null;
+            // this.colorHandle?.Release();
+            // this.colorHandle = null;
         }
     }
 

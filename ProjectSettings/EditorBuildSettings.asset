@@ -8,9 +8,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Main.unity
     guid: 641bf076f69f4c74db7e9685626d88c7
+  - enabled: 1
+    path: Assets/Scenes/VoidTest.unity
+    guid: 6e71af8141e763c46b7a9ae730625b54
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 8dfdb051a864a7345a682be1d155a36f,
       type: 2}

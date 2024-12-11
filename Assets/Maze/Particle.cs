@@ -15,7 +15,7 @@ public class Particle : MonoBehaviour {
     void Start() {
         rb = GetComponent<Rigidbody>();
         lastPosition = transform.position;
-        //DisableParticle();
+            //DisableParticle();
     }
 
     void OnEnable()

@@ -47,7 +47,7 @@ public class TriggerTimer : MonoBehaviour
 
     private void TriggerFunction()
     {
-        SoundEffectsManager.Instance.PlaySound("start");
+        SoundEffectsManager.Instance.PlaySound("start", 1.5f);
         tracker.EnableParticle();
         Debug.Log("Maze is active");
         gameObject.SetActive(false);
