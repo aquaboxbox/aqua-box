@@ -16233,7 +16233,7 @@ GameObject:
   - component: {fileID: 1451166298}
   m_Layer: 0
   m_Name: Particle
-  m_TagString: Aquabox
+  m_TagString: Particle
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -16876,6 +16876,7 @@ GameObject:
   - component: {fileID: 1667410901}
   - component: {fileID: 1667410904}
   - component: {fileID: 1667410900}
+  - component: {fileID: 1667410905}
   m_Layer: 0
   m_Name: Maze
   m_TagString: Aquabox
@@ -16988,6 +16989,26 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!114 &1667410905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667410899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3553db22cdaa39d4f8c0af7ae9b6f949, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mazeExitPrefab: {fileID: 8211092298735546374, guid: de745d7bcac03b44eb8d47587f6ca3dc,
+    type: 3}
+  particleTag: Particle
+  difficulty: 1
+  randomness: 0.2
+  objectControl: {fileID: 7806969629813510641}
+  mazePrefab: {fileID: 4446350555001515280, guid: b2f8c8661c6ffe447ac44756b42aa080,
+    type: 3}
 --- !u!1 &1685006067
 GameObject:
   m_ObjectHideFlags: 0
