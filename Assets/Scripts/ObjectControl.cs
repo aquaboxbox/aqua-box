@@ -8,6 +8,12 @@ public class ObjectControl : MonoBehaviour
     public GameObject mazeObject;
     public GameObject waterObject;
 
+    void Start() {
+        particleObject.SetActive(false);
+        mazeObject.SetActive(false);
+        waterObject.SetActive(true);
+    }
+
     private void Awake()
     {
         // Find the GameObject named "Particle" in the scene
@@ -28,6 +34,12 @@ public class ObjectControl : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.B)){
             DisableParticle();
         }
+    }
+
+    public void ToggleParticle() {
+        particleObject.SetActive(!particleObject.activeSelf);
+        mazeObject.SetActive(!mazeObject.activeSelf);
+        waterObject.SetActive(!waterObject.activeSelf);
     }
 
     /// <summary>

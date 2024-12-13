@@ -51,7 +51,7 @@ namespace PBDFluid
             m_shader.SetVector("MaxBounds", maxBounds);
 
             m_shader.SetInt("NumParticles", Body.NumParticles);
-            m_shader.SetVector("Gravity", new Vector3(0.0f, -9.81f, 0.0f));
+            m_shader.SetVector("Gravity", new Vector3(0.0f, -9.81f, 0.0f)); //new Vector3(0.0f, 0.0f, 0.0f)
             m_shader.SetFloat("Dampning", Body.Dampning);
             m_shader.SetFloat("DeltaTime", dt);
             m_shader.SetFloat("Density", Body.Density);

@@ -32,14 +32,13 @@ public class TriggerTimer : MonoBehaviour
 
     private void Update()
     {
-        if (!started && isObjectInTrigger)
+        if (isObjectInTrigger)
         {
             timer += Time.deltaTime;
 
             if (timer >= triggerTime)
             {
                 TriggerFunction();
-                started = true;
                 timer = 0f; // Reset the timer after triggering
             }
         }
@@ -48,8 +47,8 @@ public class TriggerTimer : MonoBehaviour
     private void TriggerFunction()
     {
         SoundEffectsManager.Instance.PlaySound("start", 1.5f);
-        tracker.EnableParticle();
-        Debug.Log("Maze is active");
-        gameObject.SetActive(false);
+        tracker.ToggleParticle();
+        //Debug.Log("Maze is active");
+        //gameObject.SetActive(false);
     }
 }

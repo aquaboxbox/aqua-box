@@ -16,10 +16,13 @@ public class Particle : MonoBehaviour {
         rb = GetComponent<Rigidbody>();
         lastPosition = transform.position;
             //DisableParticle();
+
+        Time.fixedDeltaTime = 0.01f;
     }
 
     void OnEnable()
     {
+        transform.localPosition = new Vector3(0.0011f, 0.085f, -0.00037f);
         lastPosition = transform.position;
     }
 
@@ -27,11 +30,11 @@ public class Particle : MonoBehaviour {
     void Update() {
         if(Input.GetKeyDown(KeyCode.X)) gameObject.SetActive(true); // For debugging
         // Try to move the particle back to the last position
-        Vector3 direction = lastPosition - transform.position;
-        rb.AddForce(direction * 10.0f * 100f);
+        //Vector3 direction = lastPosition - transform.position;
+        //rb.AddForce(direction * 10.0f * 100f);
 
         // Update the last position
-        lastPosition = transform.position;
+        //lastPosition = transform.position;
     }
 
     private void DisableParticle()
