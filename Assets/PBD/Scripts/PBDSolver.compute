@@ -1,0 +1,237 @@
+﻿#pragma kernel PredictPositions
+#pragma kernel ComputeDensityAndPressure
+#pragma kernel SolveConstraint
+#pragma kernel UpdateVelocities
+#pragma kernel SolveViscosity
+#pragma kernel UpdatePositions
+
+float4x4 _LocalToWorld;
+float4x4 _WorldToLocal;
+
+float3 _MoveSinceLast;
+
+// Hash table
+RWStructuredBuffer<int2> IndexMap;
+RWStructuredBuffer<int2> Table;
+
+float HashScale;
+float3 HashSize;
+float3 HashTranslate;
+
+int3 HashIndex(float3 p) {
+	p = mul(_WorldToLocal, float4(p, 1)).xyz;
+	p = (p - HashTranslate) * HashScale;
+	return clamp(p, 0, HashSize - 1);
+}
+
+// Particles
+RWStructuredBuffer<float4> Positions;
+StructuredBuffer<float4> PredictedREAD;
+RWStructuredBuffer<float4> PredictedWRITE;
+StructuredBuffer<float4> VelocitiesREAD;
+RWStructuredBuffer<float4> VelocitiesWRITE;
+RWStructuredBuffer<float> Densities;
+RWStructuredBuffer<float> Pressures;
+
+// Boundaries of simulation
+float3 MinBounds;
+float3 MaxBounds;
+
+// Constants
+float KernelRadius;
+float KernelRadius2;
+
+float Poly6Zero;
+float Poly6;
+float SpikyGrad;
+float ViscLap;
+
+float Pow2(float v) { return v * v; }
+float Pow3(float v) { return v * v * v; }
+
+float Poly6Kernel(float len2) { return Poly6 * Pow3(KernelRadius2 - len2); }
+float3 SpikyGradKernel(float3 p, float len2) { float r = sqrt(len2); r = max(r, 0.001f); return (p / r) * SpikyGrad * Pow2(KernelRadius - r); } // Causes NaN if r too small
+float ViscLapKernel(float len2) { return ViscLap * (KernelRadius - sqrt(len2)); }
+
+// Outputs a random float between 0 and 1 based on the given seed
+float rand(uint seed) {
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return ((float)seed) / float(0xffffffff);
+}
+
+/* 	FOREACH_NEIGHBOR (float3 pi -> int n)
+	1. Hash particle position (pi)
+	2. Loop over all neighbor cells
+	3. Check if cell is inside bounds
+	4. Get list of neighbors from Table (start, end = bounds)
+	4. Loop over neighbors
+	5. Get neighbor index 'n' from IndexMap
+*/
+
+#define FOREACH_NEIGHBOR \
+int3 hashIndex = HashIndex(pi); \
+int3 size = HashSize; \
+int sizexy = size.x * size.y; \
+[unroll] \
+for (int k = -1; k <= 1; k++) { \
+	[unroll] \
+	for (int j = -1; j <= 1; j++) { \
+		[unroll] \
+		for (int i = -1; i <= 1; i++) { \
+			int3 cell = int3(i, j, k) + hashIndex; \
+			int3 insideBounds = (cell < 0) + (cell >= size); \
+			if (dot(insideBounds, insideBounds) != 0) continue; \
+			int hash = cell.x + cell.y * size.x + cell.z * sizexy; \
+			int2 bounds = Table[hash]; \
+			for (int idx = bounds.x; idx <= bounds.y; idx++) { \
+				int n = IndexMap[idx].y; \
+
+#define FOREACH_NEIGHBOR_END \
+} } } } \
+
+#define THREADS 128
+#define PI 3.14159265359
+
+float3 Gravity;
+float Dampning;
+float DeltaTime;
+float Density;
+float InvDensity;
+float Viscosity;
+float ParticleMass;
+int NumParticles;
+
+[numthreads(THREADS,1,1)]
+void PredictPositions(int id : SV_DispatchThreadID) {
+	if (id >= NumParticles) return;
+	float3 velocity = (1 - Dampning * DeltaTime) * VelocitiesREAD[id].xyz + Gravity * DeltaTime;
+	float3 pos = Positions[id].xyz + velocity * 1/120.0f;
+	pos = mul(_WorldToLocal, float4(pos, 1)).xyz;
+	
+	// Check boundaries with random offset to prevent particles from sticking to walls
+	bool3 outside = 
+		(pos < MinBounds - float3(rand(id.x * 29), rand(id.x * 31), rand(id.x * 37)) * 0.02f) || 
+		(pos > MaxBounds + float3(rand(id.x * 41), rand(id.x * 43), rand(id.x * 47)) * 0.02f);
+
+	// If not translated, particles will break physics
+	velocity = mul(_WorldToLocal, float4(velocity, 0)).xyz;
+	velocity *= 1 - 2 * outside * 0.75f;
+	velocity = mul(_LocalToWorld, float4(velocity, 0)).xyz;
+
+	pos = mul(_LocalToWorld, float4(pos, 1)).xyz;
+	PredictedWRITE[id] = float4(Positions[id].xyz + velocity * DeltaTime, 0);
+	VelocitiesWRITE[id] = float4(velocity, 0);
+}
+
+[numthreads(THREADS, 1, 1)]
+void ComputeDensityAndPressure(int id : SV_DispatchThreadID) {
+	if (id >= NumParticles) return;
+
+	float3 pi = PredictedREAD[id].xyz;
+
+	float density = ParticleMass * Poly6Zero;
+	float pressure = 0;
+
+	float sum_grad_C2 = 0.0f;
+	float3 gradC_i = 0.0f;
+
+	FOREACH_NEIGHBOR
+		if (n == id) continue;
+		
+		float3 diff = pi - PredictedREAD[n].xyz;
+		float dist2 = dot(diff, diff);
+
+		if (dist2 >= KernelRadius2) continue;
+
+		density += ParticleMass * Poly6Kernel(dist2);
+		float3 gradC_j = -ParticleMass * InvDensity * SpikyGradKernel(diff, dist2);
+		sum_grad_C2 += dot(gradC_j, gradC_j);
+		gradC_i -= gradC_j;
+
+	FOREACH_NEIGHBOR_END
+
+	float C = density * InvDensity - 1.0f;
+	if (C > -0.5f) {
+		// C > 0 for 60% - 65% of particles
+		sum_grad_C2 += dot(gradC_i, gradC_i);
+	
+		//If the fluid is collapsing you need to adjust e.
+		//Its a user specified relaxation parameter that 
+		//needs to be added to stabilze the pressure
+		//due to a vanishing gradient at the smoothing 
+		//kernel borders. The value may need to increase
+		//as the number of particles increase.
+		float e = 60.0f;
+		pressure = -C / (sum_grad_C2 + e);
+	}
+
+	Densities[id] = density;
+	Pressures[id] = pressure;
+}
+
+[numthreads(THREADS, 1, 1)]
+void SolveConstraint(int id : SV_DispatchThreadID) {
+	if (id >= NumParticles) return;
+
+	float3 pi = PredictedREAD[id].xyz;
+	float pressure = Pressures[id];
+
+	float3 corr = 0;
+
+	FOREACH_NEIGHBOR
+		if (n == id) continue;
+		
+		float3 diff = pi - PredictedREAD[n].xyz;
+		float dist2 = dot(diff, diff);
+
+		if (dist2 >= KernelRadius2) continue;
+
+		corr += (pressure + Pressures[n]) * ParticleMass * InvDensity * SpikyGradKernel(diff, dist2);
+
+	FOREACH_NEIGHBOR_END
+
+	PredictedWRITE[id] = float4(pi + corr, 0);
+}
+
+[numthreads(THREADS, 1, 1)]
+void UpdateVelocities(int id : SV_DispatchThreadID) {
+	if (id >= NumParticles) return;
+	VelocitiesWRITE[id] = (PredictedREAD[id] - Positions[id]) / DeltaTime;
+}
+
+[numthreads(THREADS, 1, 1)]
+void SolveViscosity(int id : SV_DispatchThreadID) {
+	if (id >= NumParticles) return;
+
+	float3 pi = PredictedREAD[id].xyz;
+	float3 velocity = VelocitiesREAD[id].xyz;
+
+	// Compute viscosity
+	float viscosityMulMass = Viscosity * ParticleMass;
+
+	FOREACH_NEIGHBOR
+		if (n == id || n >= NumParticles) continue;
+
+		float3 diff = pi - PredictedREAD[n].xyz;
+		float dist2 = dot(diff, diff);
+
+		if (dist2 >= KernelRadius2) continue;
+
+		float v = ViscLapKernel(dist2) * viscosityMulMass / Densities[n];
+		velocity -= v * (velocity - VelocitiesREAD[n].xyz);
+
+	FOREACH_NEIGHBOR_END
+
+	VelocitiesWRITE[id] = float4(velocity, 0);
+}
+
+[numthreads(THREADS, 1, 1)]
+void UpdatePositions(int id : SV_DispatchThreadID) {
+	if (id >= NumParticles) return;
+	float3 pos = mul(_WorldToLocal, float4(PredictedREAD[id].xyz, 1)).xyz;
+	Positions[id] = float4(mul(_LocalToWorld, float4(clamp(pos, MinBounds, MaxBounds), 1)).xyz, 0);
+}
