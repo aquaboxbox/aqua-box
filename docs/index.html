@@ -8,7 +8,8 @@
     <title>AquaBox</title>
 
     <meta property="og:title" content="AquaBox">
-    <meta property="og:description" content="AquaBox is an immersive sandbox experience where players interact with 1:1 mapped physical box in VR...">
+    <meta property="og:description"
+        content="AquaBox is an immersive sandbox experience where players interact with 1:1 mapped physical box in VR...">
     <!-- <meta property="og:image" content="https://aquaboxbox.github.io/aqua-box/images/og_image.png"> -->
     <meta property="og:url" content="https://aquaboxbox.github.io/aqua-box/">
     <meta property="og:type" content="website">
@@ -31,7 +32,7 @@
     <div class="big-area blue-background">
         <section id="video" class="py-5 text-center">
             <div class="container">
-                <img src="images/logo_wide.png" alt="AquaBox" class="img-fluid mx-auto d-block mb-4 logo-image">
+                <img src="images/logo_wide.png" alt="AquaBox" class="img-fluid d-block logo-image mx-auto mb-4">
                 <div class="row justify-content-center">
                     <div class="col-md-8">
                         <!-- <div class="ratio ratio-16x9">
@@ -46,11 +47,16 @@
         <section id="about">
             <div class="container">
                 <h2 class="text-center">About</h2>
-                <p class="text-center"><span style="color:#196e86">Aqua</span><span style="color:#9e161c">Box</span> is an 
-                    immersive sandbox experience where players interact with 1:1 mapped physical box in VR. The box has two modes:
-                    a maze mode where players guide a particle through a maze, and a fluid simulation that can be manipulated through 
-                    the box's movement. To further enhance the experience, the box uses real water inside the box to give the haptic 
-                    feedback of water. Test your skills in the maze, or just relax and play with the fluid simulation whilst your brain 
+                <p class="text-center"><span style="color:#196e86">Aqua</span><span style="color:#9e161c">Box</span> is
+                    an
+                    immersive sandbox experience where players interact with 1:1 mapped physical box in VR. The box has
+                    two modes:
+                    a maze mode where players guide a particle through a maze, and a fluid simulation that can be
+                    manipulated through
+                    the box's movement. To further enhance the experience, the box uses real water inside the box to
+                    give the haptic
+                    feedback of water. Test your skills in the maze, or just relax and play with the fluid simulation
+                    whilst your brain
                     is tricked to make sense of the physics.</p>
                 <!-- <div class="button-container img-fluid mx-auto d-block mb-4">
                     <a href="https://github.com/AdvancedGraphicWizards/p-plane_panic" class="play-button-link">
@@ -65,25 +71,31 @@
             <div class="container">
                 <div class="d-flex row align-items-center mb-5">
                     <div class="col-md-6">
-                        <img src="images/photos/features/aquabox-fluid-2.webp" class="img-fluid me-3 img-howtoplay" alt="Fluid Simulation">
+                        <img src="images/photos/features/aquabox-fluid-2.webp" class="img-fluid img-howtoplay me-3"
+                            alt="Fluid Simulation">
                     </div>
                     <div class="col-md-6">
                         <h4>Fluid Simulation</h4>
-                        <p>The fluid simulation is a real-time simulation that reacts to the box's movement, and is rendered 
-                            with realistic water rendering with refraction and absorption. The interesting part is how easily 
-                            the brain is tricked to make sense of the simulation, using the real water inside for haptic feedback.
+                        <p>The fluid simulation is a real-time simulation that reacts to the box's movement, and is
+                            rendered
+                            with realistic water rendering with refraction and absorption. The interesting part is how
+                            easily
+                            the brain is tricked to make sense of the simulation, using the real water inside for haptic
+                            feedback.
                         </p>
                     </div>
                 </div>
 
                 <div class="d-flex row align-items-center mb-5">
                     <div class="col-md-6 order-md-2">
-                        <img src="images/photos/features/aquabox-maze.jpg" class="img-fluid" alt="Maze">
+                        <img src="images/photos/features/aquabox-maze.webp" class="img-fluid" alt="Maze">
                     </div>
                     <div class="col-md-6 order-md-1">
                         <h4>Maze</h4>
-                        <p>Solve the maze by moving and rotating the box around the floating particle. The maze is generated on start of the 
-                            application and always provides a solvable maze. The particle is lit up to easier be seen, and the exit goal can 
+                        <p>Solve the maze by moving and rotating the box around the floating particle. The maze is
+                            generated on start of the
+                            application and always provides a solvable maze. The particle is lit up to easier be seen,
+                            and the exit goal can
                             be found in the shape of a green opening
                         </p>
                     </div>
@@ -91,11 +103,13 @@
 
                 <div class="d-flex row align-items-center mb-5">
                     <div class="col-md-6">
-                        <img src="images/photos/features/aquabox-transition.webp" class="img-fluid" alt="Switch Game Mode">
+                        <img src="images/photos/features/aquabox-transition.webp" class="img-fluid"
+                            alt="Switch Game Mode">
                     </div>
                     <div class="col-md-6">
                         <h4>Switching between game modes</h4>
-                        <p>To switch between game modes, the box can be held inside the blue hollow box for 3 secconds, during which a sound 
+                        <p>To switch between game modes, the box can be held inside the blue hollow box for 3 secconds,
+                            during which a sound
                             will play to let the player know they are trying to change game mode.
                         </p>
                     </div>
@@ -129,7 +143,8 @@
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <div class="card">
-                                <img src="images/photos/progress/AquaBoxPoster.png" class="card-img-top img-fluid rounded">
+                                <img src="images/photos/progress/AquaBoxPoster.png"
+                                    class="card-img-top img-fluid rounded">
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
@@ -158,13 +173,18 @@
                             <span class="role-tag">Compute Shaders</span>
                             <span class="role-tag">HLSL</span>
                         </div>
-                        <p>I created the water rendering for the fluid simulation. In order to achieve real time performance the water was rendered
-                           using screen space techniques described in the paper "Screen space fluid rendering with curvature flow" 2009 Laan et al.
-                           Some interesting parts of the rendering were using 2D billboards to render 3D spheres, using edge preserving bilateral blurs
-                           and reconstructing normals from the depth buffer.</p>
+                        <p>I created the water rendering for the fluid simulation. In order to achieve real time
+                            performance the water was rendered
+                            using screen space techniques described in the paper "Screen space fluid rendering with
+                            curvature flow" 2009 Laan et al.
+                            Some interesting parts of the rendering were using 2D billboards to render 3D spheres, using
+                            edge preserving bilateral blurs
+                            and reconstructing normals from the depth buffer.</p>
                         <div class="social-icons">
-                            <a href="https://stofffe.github.io/personal-website/ " target="_blank"><i class="bi bi-globe"></i></a>
-                            <a href="https://www.linkedin.com/in/christoffer-andersson-11b106226/" target="_blank"><i class="bi bi-linkedin"></i></a>
+                            <a href="https://stofffe.github.io/personal-website/ " target="_blank"><i
+                                    class="bi bi-globe"></i></a>
+                            <a href="https://www.linkedin.com/in/christoffer-andersson-11b106226/" target="_blank"><i
+                                    class="bi bi-linkedin"></i></a>
                             <a href="https://github.com/stofffe" target="_blank"><i class="bi bi-github"></i></a>
                             <a href="mailto:christoffer.andersson.dev@gmail.com"><i class="bi bi-envelope"></i></a>
                         </div>
@@ -182,18 +202,21 @@
                             <span class="role-tag">Procedural Generation</span>
                             <span class="role-tag">Game Design</span>
                         </div>
-                        <p>I took an existing fluid simulation based on PBD Fluids and made it compatible to being manipulated in VR during runtime. It was important that the simulation 
-                            was stable under all circumstances when being shaken about in VR, and that our target framerate of 90 FPS were kept. I also implemented 
+                        <p>I took an existing fluid simulation based on PBD Fluids and made it compatible to being
+                            manipulated in VR during runtime. It was important that the simulation
+                            was stable under all circumstances when being shaken about in VR, and that our target
+                            framerate of 90 FPS were kept. I also implemented
                             the maze generation and collision physics for the maze particle.</p>
                         <div class="social-icons">
-                            <a href="https://www.linkedin.com/in/rasmusmea/" target="_blank"><i class="bi bi-linkedin"></i></a>
+                            <a href="https://www.linkedin.com/in/rasmusmea/" target="_blank"><i
+                                    class="bi bi-linkedin"></i></a>
                             <a href="https://github.com/RasmusMEA" target="_blank"><i class="bi bi-github"></i></a>
                             <a href="mailto:ralle.01.ra@gmail.com"><i class="bi bi-envelope"></i></a>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-6 mb-4">    
+                <div class="col-lg-4 col-md-6 mb-4">
                     <div class="team-member text-center" id="Mille">
                         <img src="images/photos/team/mille.png" alt="Mille Kåge">
                         <h5>Mille Kåge</h5>
@@ -203,13 +226,18 @@
                             <span class="role-tag">Box Construction</span>
                             <span class="role-tag">Fire Particle</span>
                         </div>
-                        <p>My major focus during this project was the interaction with the physical box and mapping it accurately to the virtual box. 
-                            We wanted the interaction to feel intuitive so it was important that the tracking worked well and that the box was scaled accurately.
-                            Since we also wanted the haptic feedback of having water inside the box, it also had to be reliably waterproof and refillable. 
-                            I also created the fire particle object to give the user something interesting to look at when solving the maze. It was a fun project!
+                        <p>My major focus during this project was the interaction with the physical box and mapping it
+                            accurately to the virtual box.
+                            We wanted the interaction to feel intuitive so it was important that the tracking worked
+                            well and that the box was scaled accurately.
+                            Since we also wanted the haptic feedback of having water inside the box, it also had to be
+                            reliably waterproof and refillable.
+                            I also created the fire particle object to give the user something interesting to look at
+                            when solving the maze. It was a fun project!
                         </p>
                         <div class="social-icons">
-                            <a href="https://www.linkedin.com/in/mille-k%C3%A5ge-0369941b5/" target="_blank"><i class="bi bi-linkedin"></i></a>
+                            <a href="https://www.linkedin.com/in/mille-k%C3%A5ge-0369941b5/" target="_blank"><i
+                                    class="bi bi-linkedin"></i></a>
                             <a href="https://github.com/Wolframe107" target="_blank"><i class="bi bi-github"></i></a>
                             <a href="mailto:millekage@gmail.com"><i class="bi bi-envelope"></i></a>
                         </div>
@@ -226,12 +254,17 @@
                             <span class="role-tag">3D Modelling</span>
                             <span class="role-tag">Environment</span>
                         </div>
-                        <p>I worked mainly on the environments for the gameplay demos and what the VR player saw in the background when the box was not in focus. 
-                            The first playable area was a reactor room, after which with pivoted to a tropical island. The main challange was to have the player 
-                            keep their focus on the box itself while having the background be more like a nice backdrop. To achieve this the second enviroonemnt 
-                            focused on making room for the player, while still having something nice to look at in the distance. </p>
+                        <p>I worked mainly on the environments for the gameplay demos and what the VR player saw in the
+                            background when the box was not in focus.
+                            The first playable area was a reactor room, after which with pivoted to a tropical island.
+                            The main challange was to have the player
+                            keep their focus on the box itself while having the background be more like a nice backdrop.
+                            To achieve this the second enviroonemnt
+                            focused on making room for the player, while still having something nice to look at in the
+                            distance. </p>
                         <div class="social-icons">
-                            <a href="https://www.linkedin.com/in/emil-w%C3%A4hrme-647ab117a/" target="_blank"><i class="bi bi-linkedin"></i></a>
+                            <a href="https://www.linkedin.com/in/emil-w%C3%A4hrme-647ab117a/" target="_blank"><i
+                                    class="bi bi-linkedin"></i></a>
                             <a href="https://github.com/eiime" target="_blank"><i class="bi bi-github"></i></a>
                             <a href="mailto:wahrme.emil@gmail.com"><i class="bi bi-envelope"></i></a>
                         </div>
@@ -249,12 +282,16 @@
                             <span class="role-tag">Interaction</span>
                             <span class="role-tag">Gameplay</span>
                         </div>
-                        <p>My primary focus has been on implementing triggers, developing fundamental HLSL shaders, and facilitating object interactions. 
-                            Transitioning from a previous project that utilized the Godot engine, a significant portion of my time was dedicated to integrating into the new development environment.
-                            The HLSL shaders I developed concentrated on the interactions between shaders and object triggers, with a particular emphasis on color mapping. 
+                        <p>My primary focus has been on implementing triggers, developing fundamental HLSL shaders, and
+                            facilitating object interactions.
+                            Transitioning from a previous project that utilized the Godot engine, a significant portion
+                            of my time was dedicated to integrating into the new development environment.
+                            The HLSL shaders I developed concentrated on the interactions between shaders and object
+                            triggers, with a particular emphasis on color mapping.
                             As the project progressed, my focus increasingly shifted towards the objects themselves.</p>
                         <div class="social-icons">
-                            <a href="https://www.linkedin.com/in/mert-demirs%C3%BC-5942b8222/" target="_blank"><i class="bi bi-linkedin"></i></a>
+                            <a href="https://www.linkedin.com/in/mert-demirs%C3%BC-5942b8222/" target="_blank"><i
+                                    class="bi bi-linkedin"></i></a>
                             <a href="https://github.com/MertD95" target="_blank"><i class="bi bi-github"></i></a>
                             <a href="mailto:mert.demirsu@hotmail.com"><i class="bi bi-envelope"></i></a>
                         </div>
