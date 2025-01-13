@@ -1,10 +1,10 @@
 @font-face {
-    font-family: 'LuckiestGuy-Regular';
-    src: url('../fonts/LuckiestGuy-Regular.ttf') format('embedded-opentype'),
-        url('../fonts/LuckiestGuy-Regular.ttf') format('woff2'),
-        url('../fonts/LuckiestGuy-Regular.ttf') format('woff'),
-        url('../fonts/LuckiestGuy-Regular.ttf') format('truetype'),
-        url('../fonts/LuckiestGuy-Regular.ttf') format('svg');
+    font-family: 'Heavitas';
+    src: url('../fonts/Heavitas.ttf') format('embedded-opentype'),
+        url('../fonts/Heavitas.ttf') format('woff2'),
+        url('../fonts/Heavitas.ttf') format('woff'),
+        url('../fonts/Heavitas.ttf') format('truetype'),
+        url('../fonts/Heavitas.ttf') format('svg');
 }
 
 .overlay {
@@ -29,7 +29,7 @@ body {
     position: relative;
     overflow: hidden;
     z-index: 1;
-    font-family: 'LuckiestGuy-Regular', sans-serif;
+    font-family: 'Heavitas', sans-serif;
     filter: drop-shadow(0px 3px 2px #0000006e);
 }
 
@@ -65,7 +65,7 @@ body {
 h2.text-center {
     text-transform: uppercase;
     color: white;
-    font-family: 'LuckiestGuy-Regular', sans-serif;
+    font-family: 'Heavitas', sans-serif;
     filter: drop-shadow(-2.5px 3px 0px #000000);
     -webkit-text-stroke-width: 1.5px;
     -webkit-text-stroke-color: black;
@@ -74,7 +74,7 @@ h2.text-center {
 h4 {
     text-transform: uppercase;
     color: white  !important;
-    font-family: 'LuckiestGuy-Regular', sans-serif;
+    font-family: 'Heavitas', sans-serif;
     filter: drop-shadow(-1.5px 2px 0px #000000);
     -webkit-text-stroke-width: 1.5px;
     -webkit-text-stroke-color: black;
@@ -86,7 +86,7 @@ footer {
     overflow: hidden;
     z-index: 1;
     color: white;
-    font-family: 'LuckiestGuy-Regular', sans-serif;
+    font-family: 'Heavitas', sans-serif;
     -webkit-text-stroke-width: 1px;
     -webkit-text-stroke-color: black;
 }

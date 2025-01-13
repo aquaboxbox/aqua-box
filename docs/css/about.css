@@ -12,12 +12,12 @@
     padding-bottom: 3rem !important;
 }
 
-#about p.text-center {
+p.text-center {
     font-size: large;
-    font-family: 'LuckiestGuy-Regular', sans-serif;
+    font-family: 'Heavitas', sans-serif;
     color: #FFF;
     filter: drop-shadow(-1.5px 2px 0px #000000);
-    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-width: 0.5px;
     -webkit-text-stroke-color: black;
 }
 
@@ -55,7 +55,7 @@ img.img-instructions {
     border-radius: 10px;
 }
 
-#instructions .d-flex {
+.d-flex {
     padding: 1rem;
     background-color: #ffffff;
     border-radius: 8px;
@@ -64,8 +64,8 @@ img.img-instructions {
     border-radius: 5px;
 }
 
-#instructions h5 {
-    font-family: 'LuckiestGuy-Regular', sans-serif;
+h5 {
+    font-family: 'Heavitas', sans-serif;
     color: #FFF;
     filter: drop-shadow(-1px 1.5px 0px #000000);
     -webkit-text-stroke-width: 1px;
@@ -73,20 +73,20 @@ img.img-instructions {
 }
 
 @media (max-width: 992px) {
-    #instructions .d-flex {
+    .d-flex {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
 
-    #instructions .d-flex img {
+    .d-flex img {
         margin-bottom: 1rem;
         margin-right: 0rem !important;
         width: 100%;
         height: auto;
     }
 
-    #instructions .d-flex div {
+    .d-flex div {
         margin-top: 1rem;
     }
 }
