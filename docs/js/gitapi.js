@@ -1,5 +1,5 @@
-const repoOwner = 'AdvancedGraphicWizards';
-const repoName = 'p-plane_panic';
+const repoOwner = 'aquaboxbox';
+const repoName = 'aqua-box';
 const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}`;
 
 fetch(apiUrl)
