@@ -20,19 +20,17 @@ AquaBox uses a **physical, water-filled box** tracked in real time to control a 
 - **Solve a Maze** by tilting the box to guide a glowing particle through a procedurally generated labyrinth.
 - **Play with Virtual Fluid** that responds to your box’s movement, with actual water providing weight and splashing sounds that boost immersion.
 
-Switch modes by holding the real box in a specific trigger zone for a few seconds—**listen for an audio cue** indicating the transition.
-
 ---
 
 ## Requirements
 
-- **VR Headset** (e.g., HTC Vive, Oculus Rift/Quest (link cable), or another PC-based VR system).  
+- **VR Headset** (Only tested on HTC Vive with Vive Tracker).  
 - **Room Setup**:  
-  - Ensure you have a room-scale or seated/standing VR setup configured via your headset’s software (SteamVR Room Setup, Oculus Guardian, etc.).  
+  - Ensure you have a room-scale or seated/standing VR setup configured via your headset’s software (SteamVR Room Setup).  
   - Enough free space to safely move a water-filled box without risk to equipment or surroundings.
 - **Physical Box + Tracker**:  
   - A **watertight** box containing real water.  
-  - A compatible VR tracker (e.g., Vive Tracker) firmly attached on top or side of the box.
+  - A compatible VR tracker (Vive Tracker) firmly attached on top or side of the box.
 - **AquaBox Files**:  
   - Either the precompiled `.exe` from this repository or the Unity project (if you plan on running from the Editor).
 
@@ -42,22 +40,22 @@ Switch modes by holding the real box in a specific trigger zone for a few second
 
 1. **Obtain AquaBox**  
    - Download or clone the repository from GitHub.  
-   - If a **precompiled build** (`AquaBox.exe`) is included, you can skip Unity setup and launch directly from the executable.
+   - If a **precompiled build** is included, you can skip Unity setup and launch directly from the executable.
 
 2. **Set Up Your VR Environment**  
    - Run **SteamVR** (or your VR headset’s software) and confirm controllers/trackers are visible.  
-   - Complete a **Room Setup** (or “Guardian” boundary) so you have clear playspace.
+   - Complete a **Room Setup** so you have clear playspace.
 
 3. **Mount the Tracker**  
    - Securely attach the VR tracker to your real box.  
    - Start SteamVR (or similar) and ensure the tracker is recognized and visible in 3D space.
 
 4. **Launching AquaBox**  
-   - **Precompiled:** Double-click the `AquaBox.exe` file.  
+   - **Precompiled:** Double-click the .exe file.  
      - A VR window should appear, displaying the virtual environment.  
    - **Via Unity (Optional):**  
      1. Open the Unity project in Unity Hub or the Unity Editor.  
-     2. Load the AquaBox scene (e.g., `MainAquaBoxScene`).  
+     2. Load the AquaBox scene (e.g., `Void`).  
      3. Press **Play** in the Editor while wearing your VR headset.
 
 5. **Fill the Physical Box with Water** (Optional but Recommended)  
@@ -95,9 +93,9 @@ Switch modes by holding the real box in a specific trigger zone for a few second
 
 ## Troubleshooting & Tips
 
-- **Tracker Offset**: If the virtual box’s rotation or position feels “off,” recalibrate your tracker position in SteamVR or re-align the device in your VR software.  
+- **Tracker Offset**: If the virtual box’s rotation or position feels “off,” recalibrate your tracker position in SteamVR.  
 - **Performance**: On lower-end systems, you may need to reduce graphical settings in Unity to maintain a smooth VR framerate (~90 FPS is recommended).  
-- **Realism**: Try small amounts of water first. Too much water may be heavy to hold or spill.  
+- **Realism**: Try small amounts of water first. Too much water may be heavy to hold.  
 - **Audio Feedback**: The built-in sounds help you know when you’re switching modes. Keep VR headset audio on or use external speakers.
 
 ---
